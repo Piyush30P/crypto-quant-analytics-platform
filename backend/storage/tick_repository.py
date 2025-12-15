@@ -80,44 +80,57 @@ class TickDataRepository:
         logger.debug(f"Inserted {len(tick_objects)} tick records")
         return len(tick_objects)
     
-    @staticmethod
-    def get_recent_ticks(
-        symbol: str, 
-        limit: int = 100,
-        session: Optional[Session] = None
-    ) -> List[TickData]:
-        """
-        Get most recent tick data for a symbol
+@staticmethod
+def get_recent_ticks(
+    symbol: str, 
+    limit: int = 100,
+    session: Optional[Session] = None
+) -> List[Dict]:  # Changed return type to List[Dict]
+    """
+    Get most recent tick data for a symbol
+    
+    Args:
+        symbol: Trading pair symbol
+        limit: Maximum number of records to return
+        session: Optional database session
         
-        Args:
-            symbol: Trading pair symbol
-            limit: Maximum number of records to return
-            session: Optional database session
-            
-        Returns:
-            List of TickData objects
-        """
-        try:
-            if session:
-                return (
-                    session.query(TickData)
+    Returns:
+        List of tick data dictionaries (detached from session)
+    """
+    try:
+        if session:
+            ticks = (
+                session.query(TickData)
+                .filter(TickData.symbol == symbol)
+                .order_by(desc(TickData.timestamp))
+                .limit(limit)
+                .all()
+            )
+        else:
+            with get_db_session() as db:
+                ticks = (
+                    db.query(TickData)
                     .filter(TickData.symbol == symbol)
                     .order_by(desc(TickData.timestamp))
                     .limit(limit)
                     .all()
                 )
-            else:
-                with get_db_session() as db:
-                    return (
-                        db.query(TickData)
-                        .filter(TickData.symbol == symbol)
-                        .order_by(desc(TickData.timestamp))
-                        .limit(limit)
-                        .all()
-                    )
-        except Exception as e:
-            logger.error(f"Error fetching recent ticks: {e}")
-            return []
+        
+        # Convert to dictionaries to avoid session issues
+        return [
+            {
+                'timestamp': tick.timestamp,
+                'symbol': tick.symbol,
+                'price': tick.price,
+                'quantity': tick.quantity,
+                'volume': tick.volume
+            }
+            for tick in ticks
+        ]
+                
+    except Exception as e:
+        logger.error(f"Error fetching recent ticks: {e}")
+        return []
     
     @staticmethod
     def get_ticks_by_timerange(

@@ -153,8 +153,8 @@ async def test_ingestion_pipeline():
         if recent:
             print(f"  • {symbol} - Latest 3 ticks:")
             for tick in recent[:3]:
-                print(f"    - {tick.timestamp.strftime('%H:%M:%S')} | "
-                      f"${tick.price:,.2f} | qty: {tick.quantity:.4f}")
+                print(f"    - {tick['timestamp'].strftime('%H:%M:%S')} | "
+                    f"${tick['price']:,.2f} | qty: {tick['quantity']:.4f}")
         else:
             print(f"  • {symbol} - No data found")
     print()
@@ -316,8 +316,6 @@ def run_quick_component_test():
 
 
 if __name__ == "__main__":
-    import sys
-    
     if "--full" in sys.argv:
         # Run full integration test
         asyncio.run(test_ingestion_pipeline())
