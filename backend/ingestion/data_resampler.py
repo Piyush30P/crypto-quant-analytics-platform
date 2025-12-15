@@ -70,18 +70,18 @@ class DataResampler:
             timeframe: Timeframe like '1s', '1m', '5m'
 
         Returns:
-            Pandas frequency string like '1S', '1T', '5T'
+            Pandas frequency string like '1s', '1min', '5min'
         """
         mapping = {
-            '1s': '1S',
-            '1m': '1T',
-            '5m': '5T',
-            '15m': '15T',
-            '1h': '1H',
-            '4h': '4H',
+            '1s': '1s',
+            '1m': '1min',
+            '5m': '5min',
+            '15m': '15min',
+            '1h': '1h',
+            '4h': '4h',
             '1d': '1D'
         }
-        return mapping.get(timeframe.lower(), timeframe.upper())
+        return mapping.get(timeframe.lower(), timeframe.lower())
 
     def resample_ticks_to_ohlc(
         self,
