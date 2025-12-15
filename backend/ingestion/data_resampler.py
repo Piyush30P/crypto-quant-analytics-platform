@@ -215,7 +215,7 @@ class DataResampler:
 
             logger.info(
                 f"Generated {bars_inserted} {timeframe} bars for {symbol} "
-                f"from {len(tick_dicts)} ticks"
+                f"from {len(ticks)} ticks"
             )
 
             return bars_inserted
