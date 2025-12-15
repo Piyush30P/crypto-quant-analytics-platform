@@ -1,0 +1,176 @@
+# Architecture Diagram
+
+## System Components
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         CRYPTO ANALYTICS PLATFORM                        │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                              DATA SOURCE                                 │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │           Binance WebSocket API (wss://stream.binance.com)       │   │
+│  │                  Real-time Tick Data Stream                       │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          INGESTION LAYER                                 │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │  WebSocket Client (backend/ingestion/binance_websocket.py)       │  │
+│  │  • Async connection handling                                      │  │
+│  │  • Multi-symbol subscription                                      │  │
+│  │  • Auto-reconnection & error recovery                             │  │
+│  │  • Message parsing & validation                                   │  │
+│  └────────────────────────────┬─────────────────────────────────────┘  │
+│                                │                                          │
+│                                ▼                                          │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │  Data Buffer & Batch Processor                                    │  │
+│  │  • Buffering for batch inserts                                    │  │
+│  │  • Data validation & cleaning                                     │  │
+│  └────────────────────────────┬─────────────────────────────────────┘  │
+└────────────────────────────────┼────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          STORAGE LAYER                                   │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │  SQLite / PostgreSQL / TimescaleDB                                │  │
+│  │                                                                    │  │
+│  │  Tables:                                                           │  │
+│  │  • tick_data          → Raw tick data (price, qty, timestamp)    │  │
+│  │  • ohlc_data          → Resampled OHLC (1s, 1m, 5m)             │  │
+│  │  • analytics_cache    → Computed metrics cache                   │  │
+│  │  • alerts             → User-defined alert rules                 │  │
+│  │  • alert_history      → Triggered alerts log                     │  │
+│  │  • uploaded_data      → Historical CSV uploads metadata          │  │
+│  └────────────────────────────┬─────────────────────────────────────┘  │
+│                                │                                          │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │  Redis Cache (Optional)                                           │  │
+│  │  • Live analytics results                                         │  │
+│  │  • Real-time statistics                                           │  │
+│  └────────────────────────────┬─────────────────────────────────────┘  │
+└────────────────────────────────┼────────────────────────────────────────┘
+                                 │
+             ┌───────────────────┼───────────────────┐
+             │                   │                   │
+             ▼                   ▼                   ▼
+┌────────────────────┐  ┌────────────────┐  ┌──────────────────┐
+│  RESAMPLING        │  │   ANALYTICS    │  │  ALERT MANAGER   │
+│  ENGINE            │  │   ENGINE       │  │                  │
+│                    │  │                │  │                  │
+│ • 1s OHLC          │  │ • Price Stats  │  │ • Rule Engine    │
+│ • 1m OHLC          │  │ • VWAP         │  │ • Condition      │
+│ • 5m OHLC          │  │ • Hedge Ratio  │  │   Evaluation     │
+│ • Volume Agg       │  │ • Spread       │  │ • Notification   │
+│ • Trade Count      │  │ • Z-Score      │  │ • History Log    │
+│                    │  │ • ADF Test     │  │                  │
+│                    │  │ • Correlation  │  │                  │
+└────────┬───────────┘  └───────┬────────┘  └────────┬─────────┘
+         │                      │                     │
+         └──────────────────────┼─────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                            API LAYER                                     │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │  FastAPI REST API (backend/api/main.py)                          │  │
+│  │                                                                    │  │
+│  │  Endpoints:                                                        │  │
+│  │  • GET  /api/symbols              → Available symbols             │  │
+│  │  • GET  /api/ticks/{symbol}       → Raw tick data                │  │
+│  │  • GET  /api/ohlc/{symbol}        → OHLC by timeframe            │  │
+│  │  • GET  /api/analytics/pairs      → Pairs analytics               │  │
+│  │  • GET  /api/analytics/stats      → Summary statistics           │  │
+│  │  • POST /api/alerts               → Create alert                 │  │
+│  │  • GET  /api/alerts               → List alerts                  │  │
+│  │  • GET  /api/export/csv           → Export data                  │  │
+│  │  • WS   /ws/live                  → Live data stream             │  │
+│  └────────────────────────────┬─────────────────────────────────────┘  │
+└────────────────────────────────┼────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        FRONTEND LAYER                                    │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │  Streamlit Dashboard (frontend/app.py)                           │  │
+│  │                                                                    │  │
+│  │  ┌────────────────┐  ┌──────────────────────────────────────┐   │  │
+│  │  │   SIDEBAR      │  │         MAIN DASHBOARD               │   │  │
+│  │  │                │  │                                       │   │  │
+│  │  │ • Symbol       │  │  ┌─────────────────────────────────┐ │   │  │
+│  │  │   Selector     │  │  │   Price Charts (Plotly)         │ │   │  │
+│  │  │ • Timeframe    │  │  │   • Candlestick / Line          │ │   │  │
+│  │  │   Selector     │  │  │   • Zoom, Pan, Hover            │ │   │  │
+│  │  │ • Rolling      │  │  └─────────────────────────────────┘ │   │  │
+│  │  │   Window       │  │                                       │   │  │
+│  │  │ • Analytics    │  │  ┌─────────────────────────────────┐ │   │  │
+│  │  │   Options      │  │  │   Spread & Z-Score              │ │   │  │
+│  │  │ • Alert        │  │  │   • Pairs trading signals       │ │   │  │
+│  │  │   Config       │  │  └─────────────────────────────────┘ │   │  │
+│  │  │                │  │                                       │   │  │
+│  │  └────────────────┘  │  ┌─────────────────────────────────┐ │   │  │
+│  │                      │  │   Correlation Heatmap            │ │   │  │
+│  │                      │  └─────────────────────────────────┘ │   │  │
+│  │                      │                                       │   │  │
+│  │                      │  ┌─────────────────────────────────┐ │   │  │
+│  │                      │  │   Statistics Table               │ │   │  │
+│  │                      │  │   • Real-time metrics            │ │   │  │
+│  │                      │  │   • Download CSV                 │ │   │  │
+│  │                      │  └─────────────────────────────────┘ │   │  │
+│  │                      │                                       │   │  │
+│  │                      │  ┌─────────────────────────────────┐ │   │  │
+│  │                      │  │   Alert Panel                    │ │   │  │
+│  │                      │  │   • Active alerts                │ │   │  │
+│  │                      │  │   • Notification history         │ │   │  │
+│  │                      │  └─────────────────────────────────┘ │   │  │
+│  │                      └──────────────────────────────────────┘   │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                       EXTERNAL INTERACTIONS                              │
+│                                                                           │
+│  • CSV Upload      → Historical OHLC data import                        │
+│  • CSV Download    → Export processed data & analytics                  │
+│  • User Alerts     → Visual/Audio notifications on dashboard            │
+└─────────────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════
+
+DATA FLOW:
+
+1. WebSocket → Tick Data → Buffer → Database (tick_data table)
+2. Tick Data → Resampling Engine → OHLC Data (1s, 1m, 5m)
+3. OHLC Data → Analytics Engine → Computed Metrics (spreads, z-scores, etc)
+4. Computed Metrics → Cache Layer (Redis/Memory) → API
+5. API → Frontend → User Visualization
+6. User Input → Alert Configuration → Alert Manager → Notifications
+
+ALERT FLOW:
+
+Analytics Engine → Condition Check → Alert Manager → Trigger → 
+  → Alert History (Database) → Frontend Notification
+
+═══════════════════════════════════════════════════════════════════════════
+
+SCALING CONSIDERATIONS:
+
+Current (Prototype):
+• Single process application
+• SQLite for development
+• In-memory caching
+• Direct WebSocket connection
+
+Production Scale:
+• Message Queue (Kafka) for data ingestion
+• TimescaleDB for time-series optimization
+• Redis cluster for distributed caching
+• Microservices architecture (Ingestion, Analytics, API as separate services)
+• Kubernetes orchestration
+• Load balancer for API
+• Horizontal scaling of analytics workers
