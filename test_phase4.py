@@ -414,7 +414,7 @@ def run_quick_component_test():
         print("  ✅ Pair analytics calculated")
         print(f"    - Correlation: {pair_stats['correlation']['pearson']:.4f}")
         print(f"    - Hedge ratio: {pair_stats['hedge_ratio']['ratio']:.6f}")
-        if 'error' not in pair_stats['zscore']:
+        if 'error' not in pair_stats['zscore'] and pair_stats['zscore']['current'] is not None:
             print(f"    - Z-score: {pair_stats['zscore']['current']:.4f}")
     except Exception as e:
         print(f"  ❌ Calculation error: {e}")
