@@ -7,6 +7,8 @@ from fastapi.responses import JSONResponse
 from loguru import logger
 
 from backend.api.routes import router
+from backend.api.alert_routes import router as alert_router
+from backend.alerts.monitor import start_alert_monitoring, stop_alert_monitoring
 from config.settings import settings
 
 # Create FastAPI app
@@ -49,6 +51,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(router)
+app.include_router(alert_router)
 
 
 # Root endpoint
@@ -70,7 +73,14 @@ async def root():
             "ticks": "GET /api/ticks/{symbol}",
             "pair_analysis": "POST /api/pairs/analyze",
             "symbols": "GET /api/symbols",
-            "timeframes": "GET /api/timeframes/{symbol}"
+            "timeframes": "GET /api/timeframes/{symbol}",
+            "alerts": {
+                "create_rule": "POST /api/alerts/rules",
+                "get_rules": "GET /api/alerts/rules",
+                "get_history": "GET /api/alerts/history",
+                "monitor_status": "GET /api/alerts/monitor/status",
+                "manual_check": "POST /api/alerts/monitor/check"
+            }
         }
     }
 
@@ -105,6 +115,13 @@ async def startup_event():
     logger.info("API Documentation: http://localhost:8000/docs")
     logger.info("=" * 60)
 
+    # Start alert monitoring service
+    try:
+        start_alert_monitoring(check_interval_seconds=60)
+        logger.info("Alert monitoring service started (check interval: 60s)")
+    except Exception as e:
+        logger.warning(f"Could not start alert monitoring: {e}")
+
 
 # Shutdown event
 @app.on_event("shutdown")
@@ -113,6 +130,13 @@ async def shutdown_event():
     Run on application shutdown
     """
     logger.info("Shutting down Crypto Analytics Platform API")
+
+    # Stop alert monitoring service
+    try:
+        stop_alert_monitoring()
+        logger.info("Alert monitoring service stopped")
+    except Exception as e:
+        logger.warning(f"Could not stop alert monitoring: {e}")
 
 
 if __name__ == "__main__":
