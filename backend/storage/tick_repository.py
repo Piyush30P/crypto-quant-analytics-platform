@@ -106,6 +106,17 @@ class TickDataRepository:
                     .limit(limit)
                     .all()
                 )
+                # Convert to dictionaries while session is active
+                return [
+                    {
+                        'timestamp': tick.timestamp,
+                        'symbol': tick.symbol,
+                        'price': tick.price,
+                        'quantity': tick.quantity,
+                        'volume': tick.volume
+                    }
+                    for tick in ticks
+                ]
             else:
                 with get_db_session() as db:
                     ticks = (
@@ -115,18 +126,17 @@ class TickDataRepository:
                         .limit(limit)
                         .all()
                     )
-
-            # Convert to dictionaries to avoid session issues
-            return [
-                {
-                    'timestamp': tick.timestamp,
-                    'symbol': tick.symbol,
-                    'price': tick.price,
-                    'quantity': tick.quantity,
-                    'volume': tick.volume
-                }
-                for tick in ticks
-            ]
+                    # Convert to dictionaries while session is active
+                    return [
+                        {
+                            'timestamp': tick.timestamp,
+                            'symbol': tick.symbol,
+                            'price': tick.price,
+                            'quantity': tick.quantity,
+                            'volume': tick.volume
+                        }
+                        for tick in ticks
+                    ]
 
         except Exception as e:
             logger.error(f"Error fetching recent ticks: {e}")
@@ -138,22 +148,22 @@ class TickDataRepository:
         start_time: datetime,
         end_time: datetime,
         session: Optional[Session] = None
-    ) -> List[TickData]:
+    ) -> List[Dict]:
         """
         Get tick data within a time range
-        
+
         Args:
             symbol: Trading pair symbol
             start_time: Start of time range
             end_time: End of time range
             session: Optional database session
-            
+
         Returns:
-            List of TickData objects
+            List of tick data dictionaries (detached from session)
         """
         try:
             if session:
-                return (
+                ticks = (
                     session.query(TickData)
                     .filter(
                         and_(
@@ -165,9 +175,20 @@ class TickDataRepository:
                     .order_by(TickData.timestamp)
                     .all()
                 )
+                # Convert to dictionaries while session is active
+                return [
+                    {
+                        'timestamp': tick.timestamp,
+                        'symbol': tick.symbol,
+                        'price': tick.price,
+                        'quantity': tick.quantity,
+                        'volume': tick.volume
+                    }
+                    for tick in ticks
+                ]
             else:
                 with get_db_session() as db:
-                    return (
+                    ticks = (
                         db.query(TickData)
                         .filter(
                             and_(
@@ -179,6 +200,17 @@ class TickDataRepository:
                         .order_by(TickData.timestamp)
                         .all()
                     )
+                    # Convert to dictionaries while session is active
+                    return [
+                        {
+                            'timestamp': tick.timestamp,
+                            'symbol': tick.symbol,
+                            'price': tick.price,
+                            'quantity': tick.quantity,
+                            'volume': tick.volume
+                        }
+                        for tick in ticks
+                    ]
         except Exception as e:
             logger.error(f"Error fetching ticks by timerange: {e}")
             return []
