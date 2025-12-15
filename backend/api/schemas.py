@@ -120,58 +120,64 @@ class BasicStatsResponse(BaseModel):
 
 class CorrelationStats(BaseModel):
     """Correlation statistics model"""
-    pearson: float
-    pearson_pvalue: float
-    spearman: float
-    spearman_pvalue: float
-    strength: str
+    pearson: Optional[float] = None
+    pearson_pvalue: Optional[float] = None
+    spearman: Optional[float] = None
+    spearman_pvalue: Optional[float] = None
+    strength: Optional[str] = None
+    error: Optional[str] = None
 
 
 class HedgeRatioStats(BaseModel):
     """Hedge ratio statistics model"""
-    ratio: float
-    intercept: float
-    r_squared: float
-    residual_std: float
+    ratio: Optional[float] = None
+    intercept: Optional[float] = None
+    r_squared: Optional[float] = None
+    residual_std: Optional[float] = None
+    error: Optional[str] = None
 
 
 class CointegrationStats(BaseModel):
     """Cointegration test results model"""
-    adf_statistic: float
-    pvalue: float
-    critical_values: Dict[str, float]
-    is_cointegrated_5pct: bool
-    is_cointegrated_1pct: bool
-    interpretation: str
+    adf_statistic: Optional[float] = None
+    pvalue: Optional[float] = None
+    critical_values: Optional[Dict[str, float]] = None
+    is_cointegrated_5pct: Optional[bool] = None
+    is_cointegrated_1pct: Optional[bool] = None
+    interpretation: Optional[str] = None
+    error: Optional[str] = None
 
 
 class SpreadStats(BaseModel):
     """Spread statistics model"""
-    mean: float
-    std: float
-    min: float
-    max: float
-    latest: float
-    deviation_from_mean: float
+    mean: Optional[float] = None
+    std: Optional[float] = None
+    min: Optional[float] = None
+    max: Optional[float] = None
+    latest: Optional[float] = None
+    deviation_from_mean: Optional[float] = None
+    error: Optional[str] = None
 
 
 class ZScoreStats(BaseModel):
     """Z-score statistics model"""
-    current: Optional[float]
-    mean: float
-    std: float
-    min: float
-    max: float
-    signal: str
+    current: Optional[float] = None
+    mean: Optional[float] = None
+    std: Optional[float] = None
+    min: Optional[float] = None
+    max: Optional[float] = None
+    signal: Optional[str] = None
+    error: Optional[str] = None
 
 
 class RollingCorrelationStats(BaseModel):
     """Rolling correlation statistics model"""
-    current: Optional[float]
-    mean: float
-    std: float
-    min: float
-    max: float
+    current: Optional[float] = None
+    mean: Optional[float] = None
+    std: Optional[float] = None
+    min: Optional[float] = None
+    max: Optional[float] = None
+    error: Optional[str] = None
 
 
 class PairAnalysisResponse(BaseModel):
@@ -179,14 +185,14 @@ class PairAnalysisResponse(BaseModel):
     symbol1: str
     symbol2: str
     timeframe: str
-    timestamp: Optional[datetime]
+    timestamp: Optional[datetime] = None
     data_points: int
-    correlation: CorrelationStats
-    hedge_ratio: HedgeRatioStats
-    cointegration: CointegrationStats
-    spread: SpreadStats
-    zscore: ZScoreStats
-    rolling_correlation: RollingCorrelationStats
+    correlation: Optional[CorrelationStats] = None
+    hedge_ratio: Optional[HedgeRatioStats] = None
+    cointegration: Optional[CointegrationStats] = None
+    spread: Optional[SpreadStats] = None
+    zscore: Optional[ZScoreStats] = None
+    rolling_correlation: Optional[RollingCorrelationStats] = None
 
 
 class OHLCBar(BaseModel):
