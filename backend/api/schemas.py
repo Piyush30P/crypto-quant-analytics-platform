@@ -79,21 +79,23 @@ class VolumeStats(BaseModel):
 
 class ReturnsStats(BaseModel):
     """Returns statistics model"""
-    mean: float
-    std: float
-    min: float
-    max: float
-    latest: Optional[float]
-    cumulative: float
+    mean: Optional[float] = None
+    std: Optional[float] = None
+    min: Optional[float] = None
+    max: Optional[float] = None
+    latest: Optional[float] = None
+    cumulative: Optional[float] = None
+    error: Optional[str] = None
 
 
 class VolatilityStats(BaseModel):
     """Volatility statistics model"""
-    current: Optional[float]
-    mean: float
-    max: float
-    min: float
-    annualized: float
+    current: Optional[float] = None
+    mean: Optional[float] = None
+    max: Optional[float] = None
+    min: Optional[float] = None
+    annualized: Optional[float] = None
+    error: Optional[str] = None
 
 
 class VWAPStats(BaseModel):
@@ -107,13 +109,13 @@ class BasicStatsResponse(BaseModel):
     """Response model for basic statistics"""
     symbol: str
     timeframe: str
-    timestamp: Optional[datetime]
+    timestamp: Optional[datetime] = None
     data_points: int
     price_stats: PriceStats
-    volume_stats: Optional[VolumeStats]
-    returns: ReturnsStats
-    volatility: VolatilityStats
-    vwap: Optional[VWAPStats]
+    volume_stats: Optional[VolumeStats] = None
+    returns: Optional[ReturnsStats] = None
+    volatility: Optional[VolatilityStats] = None
+    vwap: Optional[VWAPStats] = None
 
 
 class CorrelationStats(BaseModel):
