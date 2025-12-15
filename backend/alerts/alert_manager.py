@@ -4,6 +4,7 @@ Alert Manager - Coordinates alert checking and triggering
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
 from loguru import logger
+import json
 
 from backend.alerts.alert_storage import (
     AlertRule, AlertType, AlertRuleRepository, AlertHistoryRepository
@@ -12,6 +13,22 @@ from backend.alerts.notification_service import send_alert_notifications
 from backend.storage.ohlc_repository import OHLCRepository
 from backend.analytics.pairs_analytics import PairsAnalyzer
 import pandas as pd
+
+
+def make_json_serializable(obj):
+    """Convert non-JSON-serializable objects to serializable formats"""
+    if isinstance(obj, pd.Timestamp):
+        return obj.isoformat()
+    elif isinstance(obj, datetime):
+        return obj.isoformat()
+    elif isinstance(obj, dict):
+        return {k: make_json_serializable(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [make_json_serializable(item) for item in obj]
+    elif isinstance(obj, (int, float, str, bool, type(None))):
+        return obj
+    else:
+        return str(obj)
 
 
 class AlertManager:
@@ -158,6 +175,9 @@ class AlertManager:
                 correlation = analysis.get('correlation', {})
                 hedge_ratio = analysis.get('hedge_ratio', {})
 
+                # Convert analysis to JSON-serializable format
+                serializable_analysis = make_json_serializable(analysis)
+
                 alert_data = {
                     'symbol1': symbol1,
                     'symbol2': symbol2,
@@ -167,7 +187,7 @@ class AlertManager:
                     'correlation': correlation.get('pearson'),
                     'hedge_ratio': hedge_ratio.get('ratio'),
                     'context_data': {
-                        'analysis': analysis,
+                        'analysis': serializable_analysis,
                         'data_points': len(merged)
                     }
                 }
