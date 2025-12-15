@@ -2,10 +2,11 @@
 Main API routes for the Crypto Analytics Platform
 """
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, HTTPException, Query
 from loguru import logger
 import pandas as pd
+import math
 
 from backend.api.schemas import (
     HealthResponse,
@@ -35,6 +36,23 @@ from backend.storage.tick_repository import TickDataRepository
 from backend.analytics.basic_stats import BasicStatsCalculator
 from backend.analytics.pairs_analytics import PairsAnalyzer
 from config.settings import settings
+
+# Helper function to sanitize NaN/Inf values for JSON serialization
+def sanitize_float_values(data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Recursively replace NaN and Inf values with None for JSON serialization
+    """
+    if isinstance(data, dict):
+        return {k: sanitize_float_values(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [sanitize_float_values(item) for item in data]
+    elif isinstance(data, float):
+        if math.isnan(data) or math.isinf(data):
+            return None
+        return data
+    else:
+        return data
+
 
 # Create router
 router = APIRouter(prefix="/api", tags=["analytics"])
@@ -267,6 +285,9 @@ async def analyze_pair(request: PairAnalysisRequest):
         if 'error' in analysis:
             raise HTTPException(status_code=500, detail=analysis['error'])
 
+        # Sanitize NaN/Inf values before creating response
+        analysis = sanitize_float_values(analysis)
+
         # Build response
         return PairAnalysisResponse(
             symbol1=symbol1,
@@ -274,12 +295,12 @@ async def analyze_pair(request: PairAnalysisRequest):
             timeframe=request.timeframe,
             timestamp=analysis.get('timestamp'),
             data_points=analysis['data_points'],
-            correlation=CorrelationStats(**analysis['correlation']),
-            hedge_ratio=HedgeRatioStats(**analysis['hedge_ratio']),
-            cointegration=CointegrationStats(**analysis['cointegration']) if 'error' not in analysis['cointegration'] else None,
-            spread=SpreadStats(**analysis['spread']),
-            zscore=ZScoreStats(**analysis['zscore']) if 'error' not in analysis['zscore'] else None,
-            rolling_correlation=RollingCorrelationStats(**analysis['rolling_correlation']) if 'error' not in analysis['rolling_correlation'] else None
+            correlation=CorrelationStats(**analysis['correlation']) if analysis.get('correlation') else None,
+            hedge_ratio=HedgeRatioStats(**analysis['hedge_ratio']) if analysis.get('hedge_ratio') else None,
+            cointegration=CointegrationStats(**analysis['cointegration']) if analysis.get('cointegration') and 'error' not in analysis['cointegration'] else None,
+            spread=SpreadStats(**analysis['spread']) if analysis.get('spread') else None,
+            zscore=ZScoreStats(**analysis['zscore']) if analysis.get('zscore') and 'error' not in analysis['zscore'] else None,
+            rolling_correlation=RollingCorrelationStats(**analysis['rolling_correlation']) if analysis.get('rolling_correlation') and 'error' not in analysis['rolling_correlation'] else None
         )
 
     except HTTPException:

@@ -1,11 +1,10 @@
 # Phase 5 API Test Script for PowerShell
 # Run this after starting the API server
 
-Write-Host "=" -NoNewline
-Write-Host ("=" * 69)
+$separator = "=" * 70
+Write-Host $separator
 Write-Host "Phase 5: API Testing (PowerShell Edition)"
-Write-Host "=" -NoNewline
-Write-Host ("=" * 69)
+Write-Host $separator
 Write-Host ""
 
 $API_URL = "http://localhost:8000"
@@ -117,12 +116,10 @@ try {
 }
 Write-Host ""
 
-Write-Host "=" -NoNewline
-Write-Host ("=" * 69)
+Write-Host $separator
 Write-Host "Testing Complete!" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "📚 Interactive Documentation:" -ForegroundColor Cyan
 Write-Host "  Swagger UI: http://localhost:8000/docs"
 Write-Host "  ReDoc: http://localhost:8000/redoc"
-Write-Host "=" -NoNewline
-Write-Host ("=" * 69)
+Write-Host $separator
