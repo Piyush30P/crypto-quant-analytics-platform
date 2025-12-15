@@ -16,7 +16,7 @@ class TickData(Base):
     """Raw tick data from WebSocket streams"""
     __tablename__ = "tick_data"
     
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     timestamp = Column(DateTime, nullable=False, index=True)
     symbol = Column(String(20), nullable=False, index=True)
     price = Column(Float, nullable=False)
@@ -36,7 +36,7 @@ class OHLC(Base):
     """OHLC candlestick data at different timeframes"""
     __tablename__ = "ohlc_data"
     
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     timestamp = Column(DateTime, nullable=False, index=True)
     symbol = Column(String(20), nullable=False, index=True)
     timeframe = Column(String(10), nullable=False, index=True)  # 1s, 1m, 5m
@@ -61,7 +61,7 @@ class AnalyticsCache(Base):
     """Cache for computed analytics to avoid recalculation"""
     __tablename__ = "analytics_cache"
     
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     cache_key = Column(String(200), unique=True, nullable=False, index=True)
     symbol_pair = Column(String(50), nullable=True, index=True)
     timeframe = Column(String(10), nullable=True)
@@ -78,7 +78,7 @@ class Alert(Base):
     """User-defined alerts based on analytics conditions"""
     __tablename__ = "alerts"
     
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     alert_name = Column(String(100), nullable=False)
     symbol_pair = Column(String(50), nullable=False, index=True)
     condition_type = Column(String(50), nullable=False)  # zscore, price, correlation, volume
@@ -100,7 +100,7 @@ class AlertHistory(Base):
     """History of triggered alerts"""
     __tablename__ = "alert_history"
     
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     alert_id = Column(BigInteger, nullable=False, index=True)
     triggered_at = Column(DateTime, server_default=func.now(), index=True)
     metric_value = Column(Float, nullable=True)
@@ -115,7 +115,7 @@ class UploadedData(Base):
     """Track uploaded OHLC CSV files"""
     __tablename__ = "uploaded_data"
     
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     filename = Column(String(255), nullable=False)
     symbol = Column(String(20), nullable=False, index=True)
     timeframe = Column(String(10), nullable=False)

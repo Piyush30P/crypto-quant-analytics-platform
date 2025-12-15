@@ -73,8 +73,8 @@ class TickDataRepository:
             )
             tick_objects.append(tick)
         
-        # Bulk insert
-        db.bulk_save_objects(tick_objects)
+        # Add all objects and let SQLAlchemy handle IDs
+        db.add_all(tick_objects)
         db.commit()
         
         logger.debug(f"Inserted {len(tick_objects)} tick records")
