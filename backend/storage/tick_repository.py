@@ -106,6 +106,17 @@ class TickDataRepository:
                     .limit(limit)
                     .all()
                 )
+                # Convert to dictionaries while session is active
+                return [
+                    {
+                        'timestamp': tick.timestamp,
+                        'symbol': tick.symbol,
+                        'price': tick.price,
+                        'quantity': tick.quantity,
+                        'volume': tick.volume
+                    }
+                    for tick in ticks
+                ]
             else:
                 with get_db_session() as db:
                     ticks = (
@@ -115,18 +126,17 @@ class TickDataRepository:
                         .limit(limit)
                         .all()
                     )
-
-            # Convert to dictionaries to avoid session issues
-            return [
-                {
-                    'timestamp': tick.timestamp,
-                    'symbol': tick.symbol,
-                    'price': tick.price,
-                    'quantity': tick.quantity,
-                    'volume': tick.volume
-                }
-                for tick in ticks
-            ]
+                    # Convert to dictionaries while session is active
+                    return [
+                        {
+                            'timestamp': tick.timestamp,
+                            'symbol': tick.symbol,
+                            'price': tick.price,
+                            'quantity': tick.quantity,
+                            'volume': tick.volume
+                        }
+                        for tick in ticks
+                    ]
 
         except Exception as e:
             logger.error(f"Error fetching recent ticks: {e}")
