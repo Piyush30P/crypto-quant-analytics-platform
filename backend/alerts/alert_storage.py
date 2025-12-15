@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 import enum
 import json
 
-from backend.storage.database import Base, get_session
+from backend.storage.database import Base, get_db_sync
 from loguru import logger
 
 
@@ -118,7 +118,7 @@ class AlertRuleRepository:
         try:
             close_session = session is None
             if session is None:
-                session = get_session()
+                session = get_db_sync()
 
             rule = AlertRule(
                 name=name,
@@ -158,7 +158,7 @@ class AlertRuleRepository:
         try:
             close_session = session is None
             if session is None:
-                session = get_session()
+                session = get_db_sync()
 
             rules = session.query(AlertRule).filter(
                 AlertRule.enabled == True,
@@ -202,7 +202,7 @@ class AlertRuleRepository:
         try:
             close_session = session is None
             if session is None:
-                session = get_session()
+                session = get_db_sync()
 
             rule = session.query(AlertRule).filter(AlertRule.id == rule_id).first()
             if rule:
@@ -239,7 +239,7 @@ class AlertHistoryRepository:
         try:
             close_session = session is None
             if session is None:
-                session = get_session()
+                session = get_db_sync()
 
             history = AlertHistory(
                 rule_id=rule_id,
@@ -277,7 +277,7 @@ class AlertHistoryRepository:
         try:
             close_session = session is None
             if session is None:
-                session = get_session()
+                session = get_db_sync()
 
             history = session.query(AlertHistory).order_by(
                 AlertHistory.triggered_at.desc()
