@@ -38,6 +38,7 @@ class NotificationChannel(enum.Enum):
 class AlertRule(Base):
     """Alert rule model"""
     __tablename__ = 'alert_rules'
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), nullable=False)
@@ -69,6 +70,7 @@ class AlertRule(Base):
 class AlertHistory(Base):
     """Alert history model - records of triggered alerts"""
     __tablename__ = 'alert_history'
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     rule_id = Column(Integer, nullable=False)  # Foreign key to alert_rules
