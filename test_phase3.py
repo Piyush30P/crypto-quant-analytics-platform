@@ -79,12 +79,48 @@ async def test_resampling_pipeline():
     print("✅ Resampler initialized")
     print()
 
-    # Perform resampling
-    print("📊 Resampling tick data to OHLC bars...")
-    print("   (This will resample the last 5 minutes of data)")
+    # Get actual data time range
+    print("📊 Finding tick data time range...")
+    recent_ticks = tick_repo.get_recent_ticks(TEST_SYMBOLS[0], limit=1)
+    if recent_ticks:
+        latest_time = recent_ticks[0]['timestamp']
+        print(f"   Latest tick: {latest_time}")
+    else:
+        latest_time = datetime.now()
+
+    # Use a wider time window to capture all data
+    # Look back 1 hour to be safe
+    end_time = latest_time
+    start_time = end_time - timedelta(hours=1)
+    print(f"   Time range: {start_time} to {end_time}")
     print()
 
-    results = await resampler.resample_all_pending()
+    # Perform resampling for each symbol/timeframe
+    print("📊 Resampling tick data to OHLC bars...")
+    total_bars = 0
+    symbols_processed = 0
+    errors = 0
+
+    for symbol in TEST_SYMBOLS:
+        symbol_bars = 0
+        for timeframe in TEST_TIMEFRAMES:
+            bars = await resampler.resample_symbol_timeframe(
+                symbol=symbol,
+                timeframe=timeframe,
+                start_time=start_time,
+                end_time=end_time
+            )
+            symbol_bars += bars
+
+        if symbol_bars > 0:
+            symbols_processed += 1
+            total_bars += symbol_bars
+
+    results = {
+        'total_bars': total_bars,
+        'symbols_processed': symbols_processed,
+        'errors': errors
+    }
 
     print(f"✅ Resampling complete!")
     print(f"  • Total bars generated: {results['total_bars']}")
