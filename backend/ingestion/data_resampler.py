@@ -193,7 +193,7 @@ class DataResampler:
             Number of OHLC bars generated
         """
         try:
-            # Fetch ticks from database
+            # Fetch ticks from database (returns dictionaries)
             ticks = self.tick_repo.get_ticks_by_timerange(
                 symbol=symbol,
                 start_time=start_time,
@@ -204,23 +204,8 @@ class DataResampler:
                 logger.debug(f"No ticks found for {symbol} in range {start_time} to {end_time}")
                 return 0
 
-            # Convert SQLAlchemy objects to dictionaries if needed
-            if hasattr(ticks[0], '__dict__'):
-                tick_dicts = [
-                    {
-                        'timestamp': tick.timestamp,
-                        'symbol': tick.symbol,
-                        'price': tick.price,
-                        'quantity': tick.quantity,
-                        'volume': tick.volume
-                    }
-                    for tick in ticks
-                ]
-            else:
-                tick_dicts = ticks
-
             # Resample to OHLC
-            ohlc_bars = self.resample_ticks_to_ohlc(tick_dicts, timeframe, symbol)
+            ohlc_bars = self.resample_ticks_to_ohlc(ticks, timeframe, symbol)
 
             if not ohlc_bars:
                 return 0
