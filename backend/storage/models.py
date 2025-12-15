@@ -74,41 +74,8 @@ class AnalyticsCache(Base):
         return f"<AnalyticsCache(key={self.cache_key}, metric={self.metric_name})>"
 
 
-class Alert(Base):
-    """User-defined alerts based on analytics conditions"""
-    __tablename__ = "alerts"
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    alert_name = Column(String(100), nullable=False)
-    symbol_pair = Column(String(50), nullable=False, index=True)
-    condition_type = Column(String(50), nullable=False)  # zscore, price, correlation, volume
-    condition_metric = Column(String(50), nullable=False)  # e.g., 'z_score', 'price_diff'
-    threshold_value = Column(Float, nullable=False)
-    comparison_operator = Column(String(10), nullable=False)  # '>', '<', '>=', '<=', '=='
-    is_active = Column(Boolean, default=True, index=True)
-    is_triggered = Column(Boolean, default=False)
-    last_triggered_at = Column(DateTime, nullable=True)
-    trigger_count = Column(Integer, default=0)
-    created_at = Column(DateTime, server_default=func.now())
-    message = Column(Text, nullable=True)
-    
-    def __repr__(self):
-        return f"<Alert(name={self.alert_name}, condition={self.condition_metric} {self.comparison_operator} {self.threshold_value})>"
-
-
-class AlertHistory(Base):
-    """History of triggered alerts"""
-    __tablename__ = "alert_history"
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    alert_id = Column(BigInteger, nullable=False, index=True)
-    triggered_at = Column(DateTime, server_default=func.now(), index=True)
-    metric_value = Column(Float, nullable=True)
-    message = Column(Text, nullable=True)
-    additional_data = Column(JSON, nullable=True)
-    
-    def __repr__(self):
-        return f"<AlertHistory(alert_id={self.alert_id}, triggered_at={self.triggered_at})>"
+# NOTE: Alert and AlertHistory models moved to backend/alerts/alert_storage.py (Phase 7)
+# Old models removed to prevent schema conflicts with Phase 7 alert system
 
 
 class UploadedData(Base):
