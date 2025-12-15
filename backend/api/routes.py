@@ -112,17 +112,29 @@ async def get_statistics(
         if 'error' in stats:
             raise HTTPException(status_code=500, detail=stats['error'])
 
-        # Build response
+        # Build response, handling error cases in nested stats
+        volatility_data = stats.get('volatility', {})
+        if 'error' in volatility_data:
+            volatility = VolatilityStats(error=volatility_data['error'])
+        else:
+            volatility = VolatilityStats(**volatility_data)
+
+        returns_data = stats.get('returns', {})
+        if 'error' in returns_data:
+            returns = ReturnsStats(error=returns_data['error'])
+        else:
+            returns = ReturnsStats(**returns_data)
+
         return BasicStatsResponse(
             symbol=symbol.upper(),
             timeframe=timeframe,
             timestamp=stats.get('timestamp'),
             data_points=stats['data_points'],
             price_stats=PriceStats(**stats['price_stats']),
-            volume_stats=VolumeStats(**stats['volume_stats']) if stats.get('volume_stats') else None,
-            returns=ReturnsStats(**stats['returns']),
-            volatility=VolatilityStats(**stats['volatility']),
-            vwap=VWAPStats(**stats['vwap']) if stats.get('vwap') else None
+            volume_stats=VolumeStats(**stats['volume_stats']) if stats.get('volume_stats') and 'error' not in stats.get('volume_stats', {}) else None,
+            returns=returns,
+            volatility=volatility,
+            vwap=VWAPStats(**stats['vwap']) if stats.get('vwap') and 'error' not in stats.get('vwap', {}) else None
         )
 
     except HTTPException:
