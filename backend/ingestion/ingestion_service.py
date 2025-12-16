@@ -1,6 +1,13 @@
 """
 Main ingestion service that coordinates WebSocket client, buffer, and database
 """
+import sys
+from pathlib import Path
+
+# Add project root to Python path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
 import asyncio
 from typing import List, Optional, Dict
 from datetime import datetime
