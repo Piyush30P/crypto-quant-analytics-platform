@@ -44,7 +44,7 @@ def start_backend():
         sys.executable,
         "-m",
         "uvicorn",
-        "backend.api.main:app",
+        "backend.api.app:app",
         "--host", settings.API_HOST,
         "--port", str(settings.API_PORT),
         "--reload" if settings.API_RELOAD else "--no-reload"
@@ -60,7 +60,7 @@ def start_frontend():
         "-m",
         "streamlit",
         "run",
-        "frontend/app.py",
+        "frontend/dashboard.py",
         "--server.port", str(settings.FRONTEND_PORT),
         "--server.headless", "true"
     ]
