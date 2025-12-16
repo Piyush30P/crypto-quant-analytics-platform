@@ -40,7 +40,7 @@ print("PHASE 1: Architecture & Setup")
 print("-" * 70)
 
 try:
-    response = requests.get(f"{API_BASE_URL}/health", timeout=5)
+    response = requests.get(f"{API_BASE_URL}/api/health", timeout=5)
     test("API Server Health Check", response.status_code == 200,
          f"API is running at {API_BASE_URL}")
 except Exception as e:
@@ -60,8 +60,9 @@ print("PHASE 2: Data Ingestion Pipeline")
 print("-" * 70)
 
 try:
-    response = requests.get(f"{API_BASE_URL}/api/data/tick/BTCUSDT?limit=10", timeout=5)
-    tick_data = response.json() if response.status_code == 200 else []
+    response = requests.get(f"{API_BASE_URL}/api/ticks/BTCUSDT?limit=10", timeout=5)
+    tick_response = response.json() if response.status_code == 200 else {}
+    tick_data = tick_response.get('ticks', [])
     test("WebSocket Tick Data Collection", len(tick_data) > 0,
          f"Found {len(tick_data)} tick data points for BTCUSDT")
 except Exception as e:
@@ -75,7 +76,7 @@ print("PHASE 3: OHLC Resampling")
 print("-" * 70)
 
 try:
-    response = requests.get(f"{API_BASE_URL}/api/data/ohlc/BTCUSDT/1m?limit=10", timeout=5)
+    response = requests.get(f"{API_BASE_URL}/api/ohlc/BTCUSDT?timeframe=1m&limit=10", timeout=5)
     ohlc_data = response.json() if response.status_code == 200 else {}
     bars = ohlc_data.get('bars', [])
     test("OHLC Bar Generation", len(bars) > 0,
@@ -100,8 +101,14 @@ print("PHASE 4: Analytics Engine")
 print("-" * 70)
 
 try:
-    response = requests.get(
-        f"{API_BASE_URL}/api/analytics/pair/BTCUSDT/ETHUSDT?timeframe=1m&window=20",
+    response = requests.post(
+        f"{API_BASE_URL}/api/pairs/analyze",
+        json={
+            "symbol1": "BTCUSDT",
+            "symbol2": "ETHUSDT",
+            "timeframe": "1m",
+            "window": 20
+        },
         timeout=10
     )
     analytics = response.json() if response.status_code == 200 else {}
@@ -136,7 +143,7 @@ print("PHASE 5: REST API")
 print("-" * 70)
 
 try:
-    response = requests.get(f"{API_BASE_URL}/api/data/symbols", timeout=5)
+    response = requests.get(f"{API_BASE_URL}/api/symbols", timeout=5)
     symbols = response.json() if response.status_code == 200 else []
     test("Symbol List Endpoint", len(symbols) > 0,
          f"Found {len(symbols)} symbols: {', '.join(symbols[:5])}")
@@ -144,7 +151,7 @@ except Exception as e:
     test("Symbol List Endpoint", False, f"Error: {e}")
 
 try:
-    response = requests.get(f"{API_BASE_URL}/api/analytics/basic/BTCUSDT?timeframe=1m&limit=20", timeout=5)
+    response = requests.get(f"{API_BASE_URL}/api/stats/BTCUSDT?timeframe=1m&limit=20", timeout=5)
     test("Basic Analytics Endpoint", response.status_code == 200,
          "Basic stats endpoint working")
 except:
