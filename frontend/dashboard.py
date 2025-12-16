@@ -22,42 +22,157 @@ st.set_page_config(
 # API Configuration
 API_BASE_URL = "http://localhost:8000"
 
-# Custom CSS for better styling
+# Enhanced Custom CSS for professional styling
 st.markdown("""
     <style>
+    /* Main Header Styling */
     .main-header {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #1f77b4;
+        font-size: 2.8rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         text-align: center;
         margin-bottom: 2rem;
+        padding: 1rem 0;
     }
+
+    /* Enhanced Metric Cards */
     .metric-card {
-        background-color: #f0f2f6;
-        padding: 1rem;
-        border-radius: 0.5rem;
+        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
         margin: 0.5rem 0;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
     }
+
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    /* Trading Signal Cards */
     .success-signal {
-        background-color: #d4edda;
+        background: linear-gradient(135deg, #d4edda 0%, #a8e6cf 100%);
         color: #155724;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border: 1px solid #c3e6cb;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 2px solid #28a745;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+        font-size: 1.1rem;
+        font-weight: 600;
     }
+
     .warning-signal {
-        background-color: #fff3cd;
+        background: linear-gradient(135deg, #fff3cd 0%, #ffe599 100%);
         color: #856404;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border: 1px solid #ffeeba;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 2px solid #ffc107;
+        box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
+        font-size: 1.1rem;
+        font-weight: 600;
     }
+
     .danger-signal {
-        background-color: #f8d7da;
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
         color: #721c24;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 2px solid #dc3545;
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    /* Section Headers */
+    .section-header {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 1.5rem 0 1rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 3px solid #667eea;
+    }
+
+    /* Stats Box */
+    .stats-box {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        margin: 1rem 0;
+        border-left: 4px solid #667eea;
+    }
+
+    /* Price Display */
+    .price-display {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #2c3e50;
+    }
+
+    .price-change-positive {
+        color: #28a745;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .price-change-negative {
+        color: #dc3545;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    /* Custom Buttons */
+    .stButton>button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 8px;
+        padding: 0.5rem 2rem;
+        font-weight: 600;
+        border: none;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        transition: all 0.3s;
+    }
+
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Download Button Styling */
+    .stDownloadButton>button {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border-radius: 8px;
+        font-weight: 600;
+        border: none;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+
+    /* Info Cards */
+    .info-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         padding: 1rem;
-        border-radius: 0.5rem;
-        border: 1px solid #f5c6cb;
+        border-radius: 10px;
+        border-left: 4px solid #17a2b8;
+        margin: 1rem 0;
+    }
+
+    /* Sidebar Styling */
+    .css-1d391kg {
+        background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+    }
+
+    /* Divider Enhancement */
+    hr {
+        margin: 2rem 0;
+        border: none;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #667eea, transparent);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -166,210 +281,424 @@ def analyze_pair(symbol1, symbol2, timeframe="1m", rolling_window=20, limit=100)
 
 
 def create_candlestick_chart(ohlc_data):
-    """Create interactive candlestick chart"""
+    """Create enhanced interactive candlestick chart"""
     if not ohlc_data or not ohlc_data.get('bars'):
         return None
 
     df = pd.DataFrame(ohlc_data['bars'])
     df['timestamp'] = pd.to_datetime(df['timestamp'])
 
+    # Create candlestick chart with custom colors
     fig = go.Figure(data=[go.Candlestick(
         x=df['timestamp'],
         open=df['open'],
         high=df['high'],
         low=df['low'],
         close=df['close'],
-        name=ohlc_data['symbol']
+        name=ohlc_data['symbol'],
+        increasing=dict(line=dict(color='#26a69a'), fillcolor='#26a69a'),
+        decreasing=dict(line=dict(color='#ef5350'), fillcolor='#ef5350')
     )])
 
     fig.update_layout(
-        title=f"{ohlc_data['symbol']} - {ohlc_data['timeframe']} Candlestick Chart",
+        title={
+            'text': f"<b>{ohlc_data['symbol']}</b> - {ohlc_data['timeframe']} Price Chart",
+            'y':0.95,
+            'x':0.5,
+            'xanchor': 'center',
+            'yanchor': 'top',
+            'font': dict(size=20, color='#2c3e50')
+        },
         xaxis_title="Time",
         yaxis_title="Price (USDT)",
-        height=500,
+        height=550,
         xaxis_rangeslider_visible=False,
-        template="plotly_white"
+        template="plotly_white",
+        hovermode='x unified',
+        plot_bgcolor='rgba(240, 242, 246, 0.5)',
+        paper_bgcolor='white',
+        font=dict(family="Arial, sans-serif", size=12),
+        xaxis=dict(
+            showgrid=True,
+            gridwidth=1,
+            gridcolor='rgba(128, 128, 128, 0.2)',
+            showline=True,
+            linewidth=2,
+            linecolor='rgba(128, 128, 128, 0.3)'
+        ),
+        yaxis=dict(
+            showgrid=True,
+            gridwidth=1,
+            gridcolor='rgba(128, 128, 128, 0.2)',
+            showline=True,
+            linewidth=2,
+            linecolor='rgba(128, 128, 128, 0.3)'
+        ),
+        margin=dict(l=60, r=60, t=80, b=60)
     )
 
     return fig
 
 
 def create_volume_chart(ohlc_data):
-    """Create volume bar chart"""
+    """Create enhanced volume bar chart"""
     if not ohlc_data or not ohlc_data.get('bars'):
         return None
 
     df = pd.DataFrame(ohlc_data['bars'])
     df['timestamp'] = pd.to_datetime(df['timestamp'])
 
-    # Color bars based on price movement
-    colors = ['red' if row['close'] < row['open'] else 'green'
+    # Color bars based on price movement (green for up, red for down)
+    colors = ['#ef5350' if row['close'] < row['open'] else '#26a69a'
               for _, row in df.iterrows()]
 
     fig = go.Figure(data=[go.Bar(
         x=df['timestamp'],
         y=df['volume'],
         marker_color=colors,
-        name='Volume'
+        name='Volume',
+        hovertemplate='<b>Time:</b> %{x}<br><b>Volume:</b> %{y:,.2f}<extra></extra>'
     )])
 
     fig.update_layout(
-        title="Trading Volume",
+        title={
+            'text': "<b>Trading Volume</b>",
+            'y':0.95,
+            'x':0.5,
+            'xanchor': 'center',
+            'yanchor': 'top',
+            'font': dict(size=18, color='#2c3e50')
+        },
         xaxis_title="Time",
         yaxis_title="Volume",
-        height=250,
-        template="plotly_white"
+        height=280,
+        template="plotly_white",
+        hovermode='x unified',
+        plot_bgcolor='rgba(240, 242, 246, 0.5)',
+        paper_bgcolor='white',
+        font=dict(family="Arial, sans-serif", size=12),
+        xaxis=dict(
+            showgrid=True,
+            gridwidth=1,
+            gridcolor='rgba(128, 128, 128, 0.2)',
+            showline=True,
+            linewidth=2,
+            linecolor='rgba(128, 128, 128, 0.3)'
+        ),
+        yaxis=dict(
+            showgrid=True,
+            gridwidth=1,
+            gridcolor='rgba(128, 128, 128, 0.2)',
+            showline=True,
+            linewidth=2,
+            linecolor='rgba(128, 128, 128, 0.3)'
+        ),
+        margin=dict(l=60, r=60, t=60, b=60),
+        showlegend=False
     )
 
     return fig
 
 
 def create_zscore_gauge(zscore_value):
-    """Create Z-score gauge chart"""
+    """Create enhanced Z-score gauge chart"""
     if zscore_value is None:
         return None
 
     # Determine color based on Z-score
     if abs(zscore_value) > 2:
-        color = "red"
+        color = "#ef5350"  # Strong signal - red
     elif abs(zscore_value) > 1:
-        color = "orange"
+        color = "#ffa726"  # Moderate signal - orange
     else:
-        color = "green"
+        color = "#26a69a"  # Neutral - green
 
     fig = go.Figure(go.Indicator(
         mode="gauge+number+delta",
         value=zscore_value,
         domain={'x': [0, 1], 'y': [0, 1]},
-        title={'text': "Z-Score"},
-        delta={'reference': 0},
+        title={
+            'text': "<b>Z-Score Analysis</b>",
+            'font': {'size': 22, 'color': '#2c3e50'}
+        },
+        delta={'reference': 0, 'font': {'size': 16}},
+        number={'font': {'size': 48, 'color': color}},
         gauge={
-            'axis': {'range': [-3, 3]},
-            'bar': {'color': color},
+            'axis': {
+                'range': [-3, 3],
+                'tickwidth': 2,
+                'tickcolor': "#2c3e50",
+                'tickfont': {'size': 14}
+            },
+            'bar': {'color': color, 'thickness': 0.75},
+            'bgcolor': "white",
+            'borderwidth': 2,
+            'bordercolor': "#e0e0e0",
             'steps': [
-                {'range': [-3, -2], 'color': "lightcoral"},
-                {'range': [-2, -1], 'color': "lightyellow"},
-                {'range': [-1, 1], 'color': "lightgreen"},
-                {'range': [1, 2], 'color': "lightyellow"},
-                {'range': [2, 3], 'color': "lightcoral"}
+                {'range': [-3, -2], 'color': "rgba(239, 83, 80, 0.2)"},
+                {'range': [-2, -1], 'color': "rgba(255, 193, 7, 0.2)"},
+                {'range': [-1, 1], 'color': "rgba(38, 166, 154, 0.2)"},
+                {'range': [1, 2], 'color': "rgba(255, 193, 7, 0.2)"},
+                {'range': [2, 3], 'color': "rgba(239, 83, 80, 0.2)"}
             ],
             'threshold': {
-                'line': {'color': "red", 'width': 4},
-                'thickness': 0.75,
+                'line': {'color': color, 'width': 5},
+                'thickness': 0.85,
                 'value': zscore_value
             }
         }
     ))
 
-    fig.update_layout(height=300)
+    fig.update_layout(
+        height=350,
+        paper_bgcolor='white',
+        font=dict(family="Arial, sans-serif"),
+        margin=dict(l=20, r=20, t=60, b=20)
+    )
     return fig
 
 
 def display_statistics_cards(stats):
-    """Display statistics as metric cards"""
+    """Display enhanced statistics as professional metric cards"""
     if not stats:
         return
 
     price_stats = stats.get('price_stats', {})
     volatility = stats.get('volatility', {})
     volume_stats = stats.get('volume_stats', {})
+    returns = stats.get('returns', {})
 
+    # Row 1: Price and Volume Metrics
+    st.markdown("### 💰 Price & Volume Metrics")
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
+        latest_price = price_stats.get('latest', 0)
+        change_pct = price_stats.get('change_pct', 0)
         st.metric(
-            label="Latest Price",
-            value=f"${price_stats.get('latest', 0):,.2f}",
-            delta=f"{price_stats.get('change_pct', 0):.2f}%"
+            label="💵 Current Price",
+            value=f"${latest_price:,.2f}",
+            delta=f"{change_pct:.2f}%",
+            delta_color="normal"
         )
 
     with col2:
+        mean_price = price_stats.get('mean', 0)
+        std_price = price_stats.get('std', 0)
         st.metric(
-            label="Mean Price",
-            value=f"${price_stats.get('mean', 0):,.2f}",
-            delta=f"±${price_stats.get('std', 0):.2f}"
+            label="📊 Mean Price",
+            value=f"${mean_price:,.2f}",
+            delta=f"Std: ${std_price:.2f}",
+            delta_color="off"
         )
 
     with col3:
-        vol = volatility.get('current')
-        if vol and vol is not None:
-            st.metric(
-                label="Volatility",
-                value=f"{vol*100:.4f}%",
-                delta=f"Ann: {volatility.get('annualized', 0)*100:.2f}%"
-            )
-        else:
-            st.metric(label="Volatility", value="N/A")
+        high_price = price_stats.get('high', 0)
+        low_price = price_stats.get('low', 0)
+        st.metric(
+            label="📈 24h High",
+            value=f"${high_price:,.2f}",
+            delta=f"Low: ${low_price:,.2f}",
+            delta_color="off"
+        )
 
     with col4:
-        latest_vol = volume_stats.get('latest') if volume_stats else None
-        if latest_vol:
+        latest_vol = volume_stats.get('latest', 0) if volume_stats else 0
+        mean_vol = volume_stats.get('mean', 0) if volume_stats else 0
+        vol_change = ((latest_vol / mean_vol - 1) * 100) if mean_vol > 0 else 0
+        st.metric(
+            label="📦 Volume",
+            value=f"{latest_vol:,.0f}",
+            delta=f"{vol_change:+.1f}% vs avg"
+        )
+
+    st.markdown("---")
+
+    # Row 2: Technical Indicators
+    st.markdown("### 📉 Technical & Historical Metrics")
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        vol = volatility.get('current')
+        ann_vol = volatility.get('annualized', 0)
+        if vol and vol is not None:
             st.metric(
-                label="Latest Volume",
-                value=f"{latest_vol:,.0f}",
-                delta=f"Avg: {volume_stats.get('mean', 0):,.0f}"
+                label="📊 Volatility",
+                value=f"{vol*100:.3f}%",
+                delta=f"Ann: {ann_vol*100:.2f}%",
+                delta_color="off"
             )
         else:
-            st.metric(label="Latest Volume", value="N/A")
+            st.metric(label="📊 Volatility", value="N/A")
+
+    with col2:
+        mean_return = returns.get('mean', 0) if returns and 'error' not in returns else 0
+        st.metric(
+            label="💹 Mean Return",
+            value=f"{mean_return*100:.4f}%",
+            delta_color="normal"
+        )
+
+    with col3:
+        sharpe = returns.get('sharpe_ratio') if returns and 'error' not in returns else None
+        if sharpe is not None:
+            st.metric(
+                label="📈 Sharpe Ratio",
+                value=f"{sharpe:.3f}",
+                delta="Higher is better",
+                delta_color="off"
+            )
+        else:
+            st.metric(label="📈 Sharpe Ratio", value="N/A")
+
+    with col4:
+        vwap_val = stats.get('vwap', {}).get('value', 0) if stats.get('vwap') else 0
+        if vwap_val > 0:
+            vwap_diff_pct = ((latest_price / vwap_val - 1) * 100) if vwap_val > 0 else 0
+            st.metric(
+                label="⚖️ VWAP",
+                value=f"${vwap_val:,.2f}",
+                delta=f"{vwap_diff_pct:+.2f}% from price"
+            )
+        else:
+            st.metric(label="⚖️ VWAP", value="N/A")
 
 
 def display_pair_analysis(analysis):
-    """Display pair trading analysis"""
+    """Display enhanced pair trading analysis"""
     if not analysis:
         return
 
-    st.subheader(f"📊 Pair Analysis: {analysis['symbol1']} vs {analysis['symbol2']}")
-
-    # Key metrics
-    col1, col2, col3, col4 = st.columns(4)
+    st.markdown(f"## 🔄 Pair Trading Analysis: {analysis['symbol1']} vs {analysis['symbol2']}")
 
     correlation = analysis.get('correlation', {})
     hedge_ratio = analysis.get('hedge_ratio', {})
     cointegration = analysis.get('cointegration', {})
     zscore = analysis.get('zscore', {})
+    spread = analysis.get('spread', {})
+
+    # Row 1: Correlation & Regression Metrics
+    st.markdown("### 📊 Correlation & Regression Analysis")
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         pearson = correlation.get('pearson')
+        strength = correlation.get('strength', 'N/A')
         if pearson is not None:
+            # Color based on correlation strength
+            correlation_emoji = "🟢" if abs(pearson) > 0.7 else "🟡" if abs(pearson) > 0.4 else "🔴"
             st.metric(
-                label="Pearson Correlation",
+                label=f"{correlation_emoji} Pearson Correlation",
                 value=f"{pearson:.4f}",
-                delta=correlation.get('strength', 'N/A')
+                delta=f"Strength: {strength}",
+                delta_color="off"
             )
         else:
             st.metric(label="Pearson Correlation", value="N/A")
 
     with col2:
-        ratio = hedge_ratio.get('ratio')
-        if ratio is not None:
+        spearman = correlation.get('spearman')
+        if spearman is not None:
             st.metric(
-                label="Hedge Ratio",
+                label="📊 Spearman Correlation",
+                value=f"{spearman:.4f}",
+                delta=f"Rank-based",
+                delta_color="off"
+            )
+        else:
+            st.metric(label="Spearman Correlation", value="N/A")
+
+    with col3:
+        ratio = hedge_ratio.get('ratio')
+        r_squared = hedge_ratio.get('r_squared', 0)
+        if ratio is not None:
+            ratio_emoji = "🟢" if r_squared > 0.7 else "🟡" if r_squared > 0.4 else "🔴"
+            st.metric(
+                label=f"{ratio_emoji} Hedge Ratio (β)",
                 value=f"{ratio:.6f}",
-                delta=f"R²: {hedge_ratio.get('r_squared', 0):.4f}"
+                delta=f"R²: {r_squared:.4f}",
+                delta_color="off"
             )
         else:
             st.metric(label="Hedge Ratio", value="N/A")
 
-    with col3:
+    with col4:
         if cointegration and cointegration.get('pvalue') is not None:
+            pvalue = cointegration.get('pvalue', 1.0)
+            is_coint = cointegration.get('is_cointegrated_5pct', False)
+            coint_emoji = "✅" if is_coint else "❌"
             st.metric(
-                label="Cointegration",
-                value=f"p={cointegration.get('pvalue', 0):.4f}",
-                delta="✓" if cointegration.get('is_cointegrated_5pct') else "✗"
+                label=f"{coint_emoji} Cointegration Test",
+                value=f"p-value: {pvalue:.4f}",
+                delta="Cointegrated" if is_coint else "Not cointegrated",
+                delta_color="normal" if is_coint else "inverse"
             )
         else:
             st.metric(label="Cointegration", value="N/A")
 
-    with col4:
+    st.markdown("---")
+
+    # Row 2: Spread & Trading Signal Metrics
+    st.markdown("### 📈 Spread & Trading Signals")
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
         zscore_val = zscore.get('current')
         if zscore_val is not None:
+            # Determine emoji and color based on Z-score
+            if abs(zscore_val) > 2:
+                zscore_emoji = "🔴"
+                zscore_desc = "Strong Signal"
+            elif abs(zscore_val) > 1:
+                zscore_emoji = "🟡"
+                zscore_desc = "Moderate Signal"
+            else:
+                zscore_emoji = "🟢"
+                zscore_desc = "Neutral"
+
             st.metric(
-                label="Z-Score",
+                label=f"{zscore_emoji} Z-Score",
                 value=f"{zscore_val:.4f}",
-                delta=zscore.get('signal', 'neutral')
+                delta=zscore_desc,
+                delta_color="off"
             )
         else:
             st.metric(label="Z-Score", value="N/A")
+
+    with col2:
+        signal = zscore.get('signal', 'neutral')
+        st.metric(
+            label="📡 Trading Signal",
+            value=signal.title(),
+            delta_color="normal"
+        )
+
+    with col3:
+        spread_current = spread.get('current')
+        spread_mean = spread.get('mean')
+        if spread_current is not None and spread_mean is not None:
+            spread_diff_pct = ((spread_current / spread_mean - 1) * 100) if spread_mean != 0 else 0
+            st.metric(
+                label="💹 Current Spread",
+                value=f"{spread_current:.4f}",
+                delta=f"{spread_diff_pct:+.2f}% vs mean"
+            )
+        else:
+            st.metric(label="Current Spread", value="N/A")
+
+    with col4:
+        spread_std = spread.get('std')
+        if spread_std is not None:
+            st.metric(
+                label="📊 Spread Volatility",
+                value=f"{spread_std:.4f}",
+                delta="Standard Deviation",
+                delta_color="off"
+            )
+        else:
+            st.metric(label="Spread Volatility", value="N/A")
+
+    st.markdown("---")
 
     # Trading signal
     if zscore_val is not None:
@@ -449,18 +778,33 @@ def main():
 
 
 def show_single_symbol_page(timeframe, limit, rolling_window):
-    """Single symbol analysis page"""
-    st.header("📈 Single Symbol Analysis")
+    """Enhanced single symbol analysis page"""
+    st.markdown("# 📈 Single Symbol Analysis")
+    st.markdown("*Comprehensive price action and technical analysis for individual cryptocurrency pairs*")
+    st.markdown("---")
 
-    # Symbol selection
-    symbol = st.selectbox(
-        "Select Symbol",
-        ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "ADAUSDT"],
-        key="single_symbol"
-    )
+    # Enhanced Symbol Selection Row
+    col1, col2, col3 = st.columns([2, 1, 1])
 
-    if st.button("Analyze", key="analyze_single"):
-        with st.spinner("Fetching data..."):
+    with col1:
+        symbol = st.selectbox(
+            "🔍 Select Trading Pair",
+            ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "ADAUSDT"],
+            key="single_symbol",
+            help="Choose the cryptocurrency trading pair to analyze"
+        )
+
+    with col2:
+        st.markdown("###")  # Spacing
+        analyze_btn = st.button("🚀 Analyze", key="analyze_single", use_container_width=True)
+
+    with col3:
+        st.markdown("###")  # Spacing
+        if st.button("🔄 Refresh", key="refresh_single", use_container_width=True):
+            st.rerun()
+
+    if analyze_btn:
+        with st.spinner(f"📊 Fetching {symbol} data..."):
             # Get statistics
             stats = get_statistics(symbol, timeframe, limit, rolling_window)
 
@@ -468,188 +812,291 @@ def show_single_symbol_page(timeframe, limit, rolling_window):
                 # Display metrics
                 display_statistics_cards(stats)
 
+                st.markdown("---")
+
                 # Get OHLC data for charts
                 ohlc_data = get_ohlc_data(symbol, timeframe, limit)
 
                 if ohlc_data:
+                    # Charts Section
+                    st.markdown("## 📊 Price & Volume Analysis")
+
                     # Candlestick chart
-                    st.subheader("Price Chart")
                     fig_candle = create_candlestick_chart(ohlc_data)
                     if fig_candle:
                         st.plotly_chart(fig_candle, use_container_width=True)
 
                     # Volume chart
-                    st.subheader("Volume")
                     fig_volume = create_volume_chart(ohlc_data)
                     if fig_volume:
                         st.plotly_chart(fig_volume, use_container_width=True)
 
+                    st.markdown("---")
+
                     # Data Export Section
-                    st.subheader("📥 Export Data")
-                    df_ohlc = pd.DataFrame(ohlc_data['bars'])
-                    csv_data = df_ohlc.to_csv(index=False)
+                    st.markdown("## 📥 Data Export")
+                    st.markdown("Download the analyzed data for further processing or record-keeping")
 
-                    st.download_button(
-                        label="📥 Download OHLC Data (CSV)",
-                        data=csv_data,
-                        file_name=f"{symbol}_{timeframe}_ohlc_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                        mime="text/csv",
-                        key="download_ohlc_single"
-                    )
+                    col1, col2, col3 = st.columns([2, 2, 2])
 
-                # Detailed statistics
-                with st.expander("📊 Detailed Statistics"):
+                    with col1:
+                        df_ohlc = pd.DataFrame(ohlc_data['bars'])
+                        csv_data = df_ohlc.to_csv(index=False)
+                        st.download_button(
+                            label="📥 Download OHLC Data (CSV)",
+                            data=csv_data,
+                            file_name=f"{symbol}_{timeframe}_ohlc_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                            mime="text/csv",
+                            key="download_ohlc_single",
+                            use_container_width=True
+                        )
+
+                    with col2:
+                        st.info(f"**{len(df_ohlc)}** data points ready for download")
+
+                    with col3:
+                        st.success(f"**Last Updated:** {datetime.now().strftime('%H:%M:%S')}")
+
+                st.markdown("---")
+
+                # Detailed statistics expander
+                with st.expander("🔬 View Detailed Statistics JSON"):
                     st.json(stats)
             else:
-                st.warning("No data available. Run test_phase3.py to generate OHLC data.")
+                st.error("❌ No data available for this symbol.")
+                st.info("💡 **Tip:** Make sure the backend ingestion service is running to collect data.")
+                st.code("python backend/ingestion/ingestion_service.py", language="bash")
 
 
 def show_pair_trading_page(timeframe, limit, rolling_window):
-    """Pair trading analysis page"""
-    st.header("🔄 Pair Trading Analysis")
+    """Enhanced pair trading analysis page"""
+    st.markdown("# 🔄 Pair Trading Analysis")
+    st.markdown("*Statistical arbitrage and mean reversion analysis for cryptocurrency pairs*")
+    st.markdown("---")
 
-    col1, col2 = st.columns(2)
+    # Enhanced Pair Selection
+    st.markdown("### 🎯 Select Trading Pair")
+
+    col1, col2, col3 = st.columns([2, 2, 1])
 
     with col1:
         symbol1 = st.selectbox(
-            "Symbol 1",
+            "📊 Primary Symbol (X)",
             ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT"],
-            key="pair_symbol1"
+            key="pair_symbol1",
+            help="First symbol in the pairs trading analysis"
         )
 
     with col2:
         symbol2 = st.selectbox(
-            "Symbol 2",
+            "📈 Secondary Symbol (Y)",
             ["ETHUSDT", "BTCUSDT", "BNBUSDT", "ADAUSDT"],
             index=0,
-            key="pair_symbol2"
+            key="pair_symbol2",
+            help="Second symbol in the pairs trading analysis"
         )
 
-    if st.button("Analyze Pair", key="analyze_pair"):
+    with col3:
+        st.markdown("###")  # Spacing
+        analyze_btn = st.button("🚀 Analyze Pair", key="analyze_pair", use_container_width=True)
+
+    if analyze_btn:
         if symbol1 == symbol2:
-            st.error("Please select different symbols!")
+            st.error("⚠️ Please select different symbols for pair trading analysis!")
+            st.info("💡 **Tip:** Pair trading requires two different cryptocurrency pairs to analyze their relationship.")
             return
 
-        with st.spinner("Analyzing pair..."):
+        with st.spinner(f"📊 Analyzing {symbol1} vs {symbol2}..."):
             analysis = analyze_pair(symbol1, symbol2, timeframe, rolling_window, limit)
 
             if analysis:
+                st.markdown("---")
+
                 # Display analysis
                 display_pair_analysis(analysis)
 
-                # Z-score gauge
+                # Z-score gauge and strategy
                 zscore = analysis.get('zscore', {})
                 zscore_val = zscore.get('current')
 
                 if zscore_val is not None:
+                    st.markdown("## 📊 Z-Score Analysis & Trading Strategy")
+
                     col1, col2 = st.columns([1, 2])
 
                     with col1:
-                        st.subheader("Z-Score Gauge")
                         fig_gauge = create_zscore_gauge(zscore_val)
                         if fig_gauge:
                             st.plotly_chart(fig_gauge, use_container_width=True)
 
                     with col2:
-                        st.subheader("Trading Strategy")
+                        st.markdown("### 📚 Mean Reversion Trading Strategy")
                         st.markdown("""
-                        **Z-Score Interpretation:**
-                        - **Z < -2**: Strong long signal (spread undervalued)
-                        - **-2 < Z < -1**: Moderate long signal
-                        - **-1 < Z < 1**: Neutral zone (no trade)
-                        - **1 < Z < 2**: Moderate short signal
-                        - **Z > 2**: Strong short signal (spread overvalued)
+                        <div class="info-card">
+                        <h4>🎯 Z-Score Interpretation Guide</h4>
 
-                        **Mean Reversion Strategy:**
-                        - Long the spread when Z-score is very negative
-                        - Short the spread when Z-score is very positive
-                        - Exit when Z-score returns to zero
-                        """)
+                        **Signal Zones:**
+                        - 🔴 **Z < -2**: Strong long signal (spread significantly undervalued)
+                        - 🟡 **-2 < Z < -1**: Moderate long signal (spread moderately undervalued)
+                        - 🟢 **-1 < Z < 1**: Neutral zone (no clear trading opportunity)
+                        - 🟡 **1 < Z < 2**: Moderate short signal (spread moderately overvalued)
+                        - 🔴 **Z > 2**: Strong short signal (spread significantly overvalued)
+
+                        **Trading Actions:**
+                        1. **Enter Long**: When Z-score drops below -2 (spread undervalued)
+                        2. **Enter Short**: When Z-score rises above +2 (spread overvalued)
+                        3. **Exit Position**: When Z-score returns to zero (mean reversion)
+
+                        **Risk Management:**
+                        - Set stop-loss if Z-score moves further in the opposite direction
+                        - Use hedge ratio (β) to determine position sizes
+                        - Monitor cointegration to ensure relationship holds
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                st.markdown("---")
 
                 # Data Export Section
-                st.subheader("📥 Export Analysis Results")
+                st.markdown("## 📥 Data Export")
+                st.markdown("Download comprehensive analysis results for further processing")
 
-                # Prepare analytics data for export
-                export_data = {
-                    'Symbol1': symbol1,
-                    'Symbol2': symbol2,
-                    'Timeframe': timeframe,
-                    'Timestamp': analysis.get('timestamp'),
-                    'Correlation_Pearson': analysis.get('correlation', {}).get('pearson'),
-                    'Correlation_Spearman': analysis.get('correlation', {}).get('spearman'),
-                    'Hedge_Ratio': analysis.get('hedge_ratio', {}).get('ratio'),
-                    'Hedge_Ratio_R2': analysis.get('hedge_ratio', {}).get('r_squared'),
-                    'Cointegration_Statistic': analysis.get('cointegration', {}).get('statistic'),
-                    'Cointegration_PValue': analysis.get('cointegration', {}).get('pvalue'),
-                    'Cointegrated_5pct': analysis.get('cointegration', {}).get('is_cointegrated_5pct'),
-                    'ZScore_Current': analysis.get('zscore', {}).get('current'),
-                    'ZScore_Signal': analysis.get('zscore', {}).get('signal'),
-                    'Spread_Current': analysis.get('spread', {}).get('current'),
-                    'Spread_Mean': analysis.get('spread', {}).get('mean'),
-                    'Spread_Std': analysis.get('spread', {}).get('std')
-                }
+                col1, col2, col3 = st.columns([2, 2, 2])
 
-                df_analytics = pd.DataFrame([export_data])
-                csv_analytics = df_analytics.to_csv(index=False)
+                with col1:
+                    # Prepare analytics data for export
+                    export_data = {
+                        'Symbol1': symbol1,
+                        'Symbol2': symbol2,
+                        'Timeframe': timeframe,
+                        'Timestamp': analysis.get('timestamp'),
+                        'Correlation_Pearson': analysis.get('correlation', {}).get('pearson'),
+                        'Correlation_Spearman': analysis.get('correlation', {}).get('spearman'),
+                        'Hedge_Ratio': analysis.get('hedge_ratio', {}).get('ratio'),
+                        'Hedge_Ratio_R2': analysis.get('hedge_ratio', {}).get('r_squared'),
+                        'Cointegration_Statistic': analysis.get('cointegration', {}).get('statistic'),
+                        'Cointegration_PValue': analysis.get('cointegration', {}).get('pvalue'),
+                        'Cointegrated_5pct': analysis.get('cointegration', {}).get('is_cointegrated_5pct'),
+                        'ZScore_Current': analysis.get('zscore', {}).get('current'),
+                        'ZScore_Signal': analysis.get('zscore', {}).get('signal'),
+                        'Spread_Current': analysis.get('spread', {}).get('current'),
+                        'Spread_Mean': analysis.get('spread', {}).get('mean'),
+                        'Spread_Std': analysis.get('spread', {}).get('std')
+                    }
 
-                st.download_button(
-                    label="📥 Download Analysis Results (CSV)",
-                    data=csv_analytics,
-                    file_name=f"{symbol1}_{symbol2}_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                    mime="text/csv",
-                    key="download_analytics_pair"
-                )
+                    df_analytics = pd.DataFrame([export_data])
+                    csv_analytics = df_analytics.to_csv(index=False)
 
-                # Detailed results
-                with st.expander("📊 Detailed Analysis Results"):
+                    st.download_button(
+                        label="📥 Download Analysis Results (CSV)",
+                        data=csv_analytics,
+                        file_name=f"{symbol1}_{symbol2}_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                        mime="text/csv",
+                        key="download_analytics_pair",
+                        use_container_width=True
+                    )
+
+                with col2:
+                    data_points = analysis.get('data_points', 0)
+                    st.info(f"**{data_points}** aligned data points analyzed")
+
+                with col3:
+                    st.success(f"**Analysis Complete:** {datetime.now().strftime('%H:%M:%S')}")
+
+                st.markdown("---")
+
+                # Detailed results expander
+                with st.expander("🔬 View Detailed Analysis JSON"):
                     st.json(analysis)
             else:
-                st.warning("No data available. Run test_phase3.py to generate OHLC data.")
+                st.error("❌ No data available for this pair.")
+                st.info("💡 **Tip:** Ensure both symbols have sufficient OHLC data in the database.")
+                st.code("python backend/ingestion/ingestion_service.py", language="bash")
 
 
 def show_multi_symbol_page(timeframe, limit, rolling_window):
-    """Multi-symbol dashboard page"""
-    st.header("📊 Multi-Symbol Dashboard")
+    """Enhanced multi-symbol dashboard page"""
+    st.markdown("# 📊 Multi-Symbol Dashboard")
+    st.markdown("*Real-time overview of multiple cryptocurrency pairs at a glance*")
+    st.markdown("---")
 
-    symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT"]
+    symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT"]
 
-    if st.button("Refresh All", key="refresh_multi"):
-        for symbol in symbols:
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown("### 💹 Market Overview")
+    with col2:
+        if st.button("🔄 Refresh All", key="refresh_multi", use_container_width=True):
+            st.rerun()
+
+    st.markdown("---")
+
+    if st.button("📊 Load Market Data", key="load_multi", use_container_width=False):
+        for idx, symbol in enumerate(symbols):
             with st.container():
-                st.subheader(f"💹 {symbol}")
+                # Symbol header
+                st.markdown(f"### {['🥇', '🥈', '🥉', '🏅'][idx]} {symbol}")
 
                 stats = get_statistics(symbol, timeframe, min(50, limit), rolling_window)
 
                 if stats:
                     price_stats = stats.get('price_stats', {})
+                    volatility = stats.get('volatility', {})
+                    volume_stats = stats.get('volume_stats', {})
 
-                    col1, col2, col3 = st.columns(3)
+                    # Create 4-column layout
+                    col1, col2, col3, col4 = st.columns(4)
 
                     with col1:
+                        latest_price = price_stats.get('latest', 0)
+                        change_pct = price_stats.get('change_pct', 0)
                         st.metric(
-                            f"{symbol} Price",
-                            f"${price_stats.get('latest', 0):,.2f}",
-                            f"{price_stats.get('change_pct', 0):.2f}%"
+                            label="💵 Price",
+                            value=f"${latest_price:,.2f}",
+                            delta=f"{change_pct:.2f}%"
                         )
 
                     with col2:
-                        volatility = stats.get('volatility', {})
                         vol = volatility.get('current')
+                        ann_vol = volatility.get('annualized', 0)
                         if vol:
                             st.metric(
-                                "Volatility",
-                                f"{vol*100:.4f}%"
+                                label="📊 Volatility",
+                                value=f"{vol*100:.3f}%",
+                                delta=f"Ann: {ann_vol*100:.1f}%",
+                                delta_color="off"
                             )
+                        else:
+                            st.metric(label="📊 Volatility", value="N/A")
 
                     with col3:
-                        volume_stats = stats.get('volume_stats', {})
                         if volume_stats:
+                            latest_vol = volume_stats.get('latest', 0)
+                            mean_vol = volume_stats.get('mean', 0)
+                            vol_change = ((latest_vol / mean_vol - 1) * 100) if mean_vol > 0 else 0
                             st.metric(
-                                "Volume",
-                                f"{volume_stats.get('latest', 0):,.0f}"
+                                label="📦 Volume",
+                                value=f"{latest_vol:,.0f}",
+                                delta=f"{vol_change:+.1f}% vs avg"
                             )
+                        else:
+                            st.metric(label="📦 Volume", value="N/A")
 
-                st.divider()
+                    with col4:
+                        high_price = price_stats.get('high', 0)
+                        low_price = price_stats.get('low', 0)
+                        daily_range = high_price - low_price
+                        st.metric(
+                            label="📈 24h Range",
+                            value=f"${daily_range:,.2f}",
+                            delta=f"H: ${high_price:,.2f} L: ${low_price:,.2f}",
+                            delta_color="off"
+                        )
+                else:
+                    st.warning(f"No data available for {symbol}")
+
+                # Add divider between symbols
+                if idx < len(symbols) - 1:
+                    st.divider()
 
 
 def show_data_management_page(timeframe):
