@@ -280,29 +280,62 @@ def analyze_pair(symbol1, symbol2, timeframe="1m", rolling_window=20, limit=100)
         return None
 
 
-def create_candlestick_chart(ohlc_data):
-    """Create enhanced interactive candlestick chart"""
+def create_candlestick_chart(ohlc_data, show_indicators=True):
+    """Create enhanced interactive candlestick chart with SMA and EMA"""
     if not ohlc_data or not ohlc_data.get('bars'):
         return None
 
     df = pd.DataFrame(ohlc_data['bars'])
     df['timestamp'] = pd.to_datetime(df['timestamp'])
 
-    # Create candlestick chart with custom colors
-    fig = go.Figure(data=[go.Candlestick(
+    # Calculate technical indicators
+    if show_indicators and len(df) >= 20:
+        # Simple Moving Average (SMA) - 20 periods
+        df['SMA_20'] = df['close'].rolling(window=20).mean()
+
+        # Exponential Moving Average (EMA) - 20 periods
+        df['EMA_20'] = df['close'].ewm(span=20, adjust=False).mean()
+
+    # Create figure with candlestick
+    fig = go.Figure()
+
+    # Add candlestick
+    fig.add_trace(go.Candlestick(
         x=df['timestamp'],
         open=df['open'],
         high=df['high'],
         low=df['low'],
         close=df['close'],
         name=ohlc_data['symbol'],
-        increasing=dict(line=dict(color='#26a69a'), fillcolor='#26a69a'),
-        decreasing=dict(line=dict(color='#ef5350'), fillcolor='#ef5350')
-    )])
+        increasing=dict(line=dict(color='#26a69a', width=1.5), fillcolor='#26a69a'),
+        decreasing=dict(line=dict(color='#ef5350', width=1.5), fillcolor='#ef5350')
+    ))
+
+    # Add SMA line
+    if show_indicators and 'SMA_20' in df.columns:
+        fig.add_trace(go.Scatter(
+            x=df['timestamp'],
+            y=df['SMA_20'],
+            mode='lines',
+            name='SMA (20)',
+            line=dict(color='#2196F3', width=2),
+            hovertemplate='<b>SMA (20):</b> $%{y:.2f}<extra></extra>'
+        ))
+
+    # Add EMA line
+    if show_indicators and 'EMA_20' in df.columns:
+        fig.add_trace(go.Scatter(
+            x=df['timestamp'],
+            y=df['EMA_20'],
+            mode='lines',
+            name='EMA (20)',
+            line=dict(color='#FF9800', width=2, dash='dash'),
+            hovertemplate='<b>EMA (20):</b> $%{y:.2f}<extra></extra>'
+        ))
 
     fig.update_layout(
         title={
-            'text': f"<b>{ohlc_data['symbol']}</b> - {ohlc_data['timeframe']} Price Chart",
+            'text': f"<b>{ohlc_data['symbol']}</b> - {ohlc_data['timeframe']} Price Chart with Technical Indicators",
             'y':0.95,
             'x':0.5,
             'xanchor': 'center',
@@ -311,7 +344,7 @@ def create_candlestick_chart(ohlc_data):
         },
         xaxis_title="Time",
         yaxis_title="Price (USDT)",
-        height=550,
+        height=600,
         xaxis_rangeslider_visible=False,
         template="plotly_white",
         hovermode='x unified',
@@ -334,7 +367,17 @@ def create_candlestick_chart(ohlc_data):
             linewidth=2,
             linecolor='rgba(128, 128, 128, 0.3)'
         ),
-        margin=dict(l=60, r=60, t=80, b=60)
+        margin=dict(l=60, r=60, t=80, b=60),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            bgcolor='rgba(255, 255, 255, 0.8)',
+            bordercolor='rgba(0, 0, 0, 0.2)',
+            borderwidth=1
+        )
     )
 
     return fig
@@ -456,6 +499,81 @@ def create_zscore_gauge(zscore_value):
         margin=dict(l=20, r=20, t=60, b=20)
     )
     return fig
+
+
+def calculate_market_sentiment(df):
+    """Calculate market sentiment based on technical indicators"""
+    if len(df) < 20:
+        return "Insufficient Data", "gray"
+
+    # Calculate indicators
+    sma_20 = df['close'].rolling(window=20).mean().iloc[-1]
+    ema_20 = df['close'].ewm(span=20, adjust=False).mean().iloc[-1]
+    current_price = df['close'].iloc[-1]
+
+    # Volume trend
+    recent_volume = df['volume'].tail(5).mean()
+    avg_volume = df['volume'].mean()
+
+    # Price momentum
+    price_change_pct = ((current_price - df['close'].iloc[0]) / df['close'].iloc[0]) * 100
+
+    # Sentiment logic
+    bullish_signals = 0
+    bearish_signals = 0
+
+    if current_price > sma_20:
+        bullish_signals += 1
+    else:
+        bearish_signals += 1
+
+    if current_price > ema_20:
+        bullish_signals += 1
+    else:
+        bearish_signals += 1
+
+    if price_change_pct > 2:
+        bullish_signals += 1
+    elif price_change_pct < -2:
+        bearish_signals += 1
+
+    if recent_volume > avg_volume * 1.2:
+        bullish_signals += 1
+
+    # Determine sentiment
+    if bullish_signals > bearish_signals + 1:
+        return "🟢 Bullish", "#28a745"
+    elif bearish_signals > bullish_signals + 1:
+        return "🔴 Bearish", "#dc3545"
+    else:
+        return "🟡 Neutral", "#ffc107"
+
+
+def simple_price_forecast(df, periods=5):
+    """Simple price forecast using EMA trend"""
+    if len(df) < 20:
+        return None
+
+    # Calculate EMA
+    ema_20 = df['close'].ewm(span=20, adjust=False).mean()
+
+    # Calculate trend (slope of recent EMA)
+    recent_ema = ema_20.tail(10).values
+    x = list(range(len(recent_ema)))
+
+    # Simple linear trend
+    if len(recent_ema) >= 2:
+        slope = (recent_ema[-1] - recent_ema[0]) / len(recent_ema)
+
+        # Forecast future prices
+        last_price = df['close'].iloc[-1]
+        forecast = []
+        for i in range(1, periods + 1):
+            predicted_price = last_price + (slope * i)
+            forecast.append(predicted_price)
+
+        return forecast
+    return None
 
 
 def display_statistics_cards(stats):
@@ -818,13 +936,116 @@ def show_single_symbol_page(timeframe, limit, rolling_window):
                 ohlc_data = get_ohlc_data(symbol, timeframe, limit)
 
                 if ohlc_data:
+                    # Market Sentiment & Prediction Section
+                    df_ohlc = pd.DataFrame(ohlc_data['bars'])
+                    df_ohlc['timestamp'] = pd.to_datetime(df_ohlc['timestamp'])
+
+                    st.markdown("---")
+                    st.markdown("## 🎯 Market Sentiment & Forecast")
+
+                    col1, col2 = st.columns(2)
+
+                    with col1:
+                        # Market Sentiment
+                        sentiment, sentiment_color = calculate_market_sentiment(df_ohlc)
+                        st.markdown(f"""
+                        <div style="background: linear-gradient(135deg, {sentiment_color}20 0%, {sentiment_color}10 100%);
+                                    padding: 1.5rem; border-radius: 12px; border-left: 4px solid {sentiment_color};
+                                    text-align: center;">
+                            <h3 style="margin: 0; color: #2c3e50;">📊 Market Sentiment</h3>
+                            <h2 style="margin: 0.5rem 0; color: {sentiment_color}; font-size: 2rem;">{sentiment}</h2>
+                            <p style="margin: 0; color: #666; font-size: 0.9rem;">Based on SMA, EMA, Price & Volume</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                    with col2:
+                        # Price Forecast
+                        forecast = simple_price_forecast(df_ohlc, periods=5)
+                        if forecast:
+                            current_price = df_ohlc['close'].iloc[-1]
+                            predicted_price = forecast[-1]
+                            price_diff = ((predicted_price - current_price) / current_price) * 100
+                            forecast_color = "#28a745" if price_diff > 0 else "#dc3545"
+
+                            st.markdown(f"""
+                            <div style="background: linear-gradient(135deg, {forecast_color}20 0%, {forecast_color}10 100%);
+                                        padding: 1.5rem; border-radius: 12px; border-left: 4px solid {forecast_color};
+                                        text-align: center;">
+                                <h3 style="margin: 0; color: #2c3e50;">🔮 5-Period Forecast</h3>
+                                <h2 style="margin: 0.5rem 0; color: {forecast_color}; font-size: 2rem;">
+                                    ${predicted_price:,.2f} ({price_diff:+.2f}%)
+                                </h2>
+                                <p style="margin: 0; color: #666; font-size: 0.9rem;">Based on EMA trend analysis</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            st.info("Insufficient data for forecast (need 20+ data points)")
+
+                    st.markdown("---")
+
                     # Charts Section
                     st.markdown("## 📊 Price & Volume Analysis")
 
-                    # Candlestick chart
-                    fig_candle = create_candlestick_chart(ohlc_data)
+                    # Candlestick chart with indicators
+                    fig_candle = create_candlestick_chart(ohlc_data, show_indicators=True)
                     if fig_candle:
                         st.plotly_chart(fig_candle, use_container_width=True)
+
+                    # Technical Indicators Summary
+                    if len(df_ohlc) >= 20:
+                        st.markdown("### 📈 Technical Indicators Summary")
+                        col1, col2, col3, col4 = st.columns(4)
+
+                        with col1:
+                            sma_20 = df_ohlc['close'].rolling(window=20).mean().iloc[-1]
+                            current_price = df_ohlc['close'].iloc[-1]
+                            sma_signal = "Above" if current_price > sma_20 else "Below"
+                            sma_color = "normal" if current_price > sma_20 else "inverse"
+                            st.metric(
+                                label="📊 SMA (20)",
+                                value=f"${sma_20:,.2f}",
+                                delta=f"Price {sma_signal}",
+                                delta_color=sma_color
+                            )
+
+                        with col2:
+                            ema_20 = df_ohlc['close'].ewm(span=20, adjust=False).mean().iloc[-1]
+                            ema_signal = "Above" if current_price > ema_20 else "Below"
+                            ema_color = "normal" if current_price > ema_20 else "inverse"
+                            st.metric(
+                                label="📉 EMA (20)",
+                                value=f"${ema_20:,.2f}",
+                                delta=f"Price {ema_signal}",
+                                delta_color=ema_color
+                            )
+
+                        with col3:
+                            # Calculate RSI (simplified)
+                            delta = df_ohlc['close'].diff()
+                            gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+                            loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+                            rs = gain / loss
+                            rsi = 100 - (100 / (1 + rs))
+                            rsi_val = rsi.iloc[-1] if not rsi.empty and not pd.isna(rsi.iloc[-1]) else 50
+
+                            rsi_signal = "Overbought" if rsi_val > 70 else "Oversold" if rsi_val < 30 else "Normal"
+                            st.metric(
+                                label="⚡ RSI (14)",
+                                value=f"{rsi_val:.1f}",
+                                delta=rsi_signal,
+                                delta_color="off"
+                            )
+
+                        with col4:
+                            # Volume trend
+                            recent_volume = df_ohlc['volume'].tail(5).mean()
+                            avg_volume = df_ohlc['volume'].mean()
+                            volume_change = ((recent_volume / avg_volume - 1) * 100) if avg_volume > 0 else 0
+                            st.metric(
+                                label="📦 Volume Trend",
+                                value=f"{recent_volume:,.0f}",
+                                delta=f"{volume_change:+.1f}% vs avg"
+                            )
 
                     # Volume chart
                     fig_volume = create_volume_chart(ohlc_data)
