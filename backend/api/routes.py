@@ -3,10 +3,11 @@ Main API routes for the Crypto Analytics Platform
 """
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, UploadFile, File, Form
 from loguru import logger
 import pandas as pd
 import math
+import io
 
 from backend.api.schemas import (
     HealthResponse,
@@ -339,4 +340,91 @@ async def get_available_timeframes(symbol: str):
 
     except Exception as e:
         logger.error(f"Error getting timeframes for {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/upload/ohlc")
+async def upload_ohlc_csv(
+    file: UploadFile = File(...),
+    symbol: str = Form(...),
+    timeframe: str = Form(...)
+):
+    """
+    Upload historical OHLC data from CSV file
+
+    CSV should contain columns: timestamp, open, high, low, close, volume (optional)
+
+    Example:
+    ```
+    timestamp,open,high,low,close,volume
+    2024-01-01 00:00:00,42000.50,42100.00,41900.00,42050.75,1234.56
+    ```
+    """
+    try:
+        # Validate file type
+        if not file.filename.endswith('.csv'):
+            raise HTTPException(status_code=400, detail="File must be a CSV")
+
+        # Read CSV file
+        contents = await file.read()
+        df = pd.read_csv(io.BytesIO(contents))
+
+        # Validate required columns
+        required_cols = ['timestamp', 'open', 'high', 'low', 'close']
+        missing_cols = [col for col in required_cols if col not in df.columns]
+
+        if missing_cols:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Missing required columns: {', '.join(missing_cols)}"
+            )
+
+        # Parse timestamp
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+
+        # Add volume if missing
+        if 'volume' not in df.columns:
+            df['volume'] = 0.0
+
+        # Calculate VWAP if volume exists
+        if df['volume'].sum() > 0:
+            df['vwap'] = ((df['high'] + df['low'] + df['close']) / 3 * df['volume']).cumsum() / df['volume'].cumsum()
+        else:
+            df['vwap'] = (df['high'] + df['low'] + df['close']) / 3
+
+        # Insert into database
+        rows_inserted = 0
+        for _, row in df.iterrows():
+            try:
+                ohlc_repo.insert_ohlc(
+                    symbol=symbol.upper(),
+                    timeframe=timeframe,
+                    timestamp=row['timestamp'],
+                    open_price=float(row['open']),
+                    high_price=float(row['high']),
+                    low_price=float(row['low']),
+                    close_price=float(row['close']),
+                    volume=float(row.get('volume', 0)),
+                    vwap=float(row.get('vwap', (row['high'] + row['low'] + row['close']) / 3))
+                )
+                rows_inserted += 1
+            except Exception as e:
+                logger.warning(f"Error inserting row: {e}")
+                continue
+
+        logger.info(f"Uploaded {rows_inserted}/{len(df)} OHLC rows for {symbol} ({timeframe})")
+
+        return {
+            "success": True,
+            "symbol": symbol.upper(),
+            "timeframe": timeframe,
+            "rows_total": len(df),
+            "rows_inserted": rows_inserted,
+            "message": f"Successfully uploaded {rows_inserted} rows"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error uploading OHLC CSV: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime
 import time
+import io
 
 # Page configuration
 st.set_page_config(
@@ -69,6 +70,41 @@ def check_api_health():
         return response.status_code == 200
     except:
         return False
+
+
+def get_alert_history(limit=100):
+    """Fetch alert history from API"""
+    try:
+        response = requests.get(
+            f"{API_BASE_URL}/api/alerts/history",
+            params={"limit": limit},
+            timeout=10
+        )
+        if response.status_code == 200:
+            return response.json()
+        return []
+    except Exception as e:
+        st.error(f"Error fetching alert history: {e}")
+        return []
+
+
+def upload_ohlc_csv(symbol, timeframe, csv_file):
+    """Upload OHLC CSV data to API"""
+    try:
+        files = {'file': csv_file}
+        data = {
+            'symbol': symbol,
+            'timeframe': timeframe
+        }
+        response = requests.post(
+            f"{API_BASE_URL}/api/upload/ohlc",
+            files=files,
+            data=data,
+            timeout=30
+        )
+        return response.status_code == 200, response.json() if response.status_code == 200 else {"error": response.text}
+    except Exception as e:
+        return False, {"error": str(e)}
 
 
 def get_statistics(symbol, timeframe="1m", limit=100, rolling_window=20):
@@ -380,7 +416,7 @@ def main():
     # Navigation
     page = st.sidebar.radio(
         "Navigation",
-        ["📈 Single Symbol Analysis", "🔄 Pair Trading Analysis", "📊 Multi-Symbol Dashboard"]
+        ["📈 Single Symbol Analysis", "🔄 Pair Trading Analysis", "📊 Multi-Symbol Dashboard", "📤 Data Management"]
     )
 
     # Common settings
@@ -401,6 +437,8 @@ def main():
         show_single_symbol_page(timeframe, limit, rolling_window)
     elif page == "🔄 Pair Trading Analysis":
         show_pair_trading_page(timeframe, limit, rolling_window)
+    elif page == "📤 Data Management":
+        show_data_management_page(timeframe)
     else:
         show_multi_symbol_page(timeframe, limit, rolling_window)
 
@@ -445,6 +483,19 @@ def show_single_symbol_page(timeframe, limit, rolling_window):
                     fig_volume = create_volume_chart(ohlc_data)
                     if fig_volume:
                         st.plotly_chart(fig_volume, use_container_width=True)
+
+                    # Data Export Section
+                    st.subheader("📥 Export Data")
+                    df_ohlc = pd.DataFrame(ohlc_data['bars'])
+                    csv_data = df_ohlc.to_csv(index=False)
+
+                    st.download_button(
+                        label="📥 Download OHLC Data (CSV)",
+                        data=csv_data,
+                        file_name=f"{symbol}_{timeframe}_ohlc_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                        mime="text/csv",
+                        key="download_ohlc_single"
+                    )
 
                 # Detailed statistics
                 with st.expander("📊 Detailed Statistics"):
@@ -515,6 +566,40 @@ def show_pair_trading_page(timeframe, limit, rolling_window):
                         - Exit when Z-score returns to zero
                         """)
 
+                # Data Export Section
+                st.subheader("📥 Export Analysis Results")
+
+                # Prepare analytics data for export
+                export_data = {
+                    'Symbol1': symbol1,
+                    'Symbol2': symbol2,
+                    'Timeframe': timeframe,
+                    'Timestamp': analysis.get('timestamp'),
+                    'Correlation_Pearson': analysis.get('correlation', {}).get('pearson'),
+                    'Correlation_Spearman': analysis.get('correlation', {}).get('spearman'),
+                    'Hedge_Ratio': analysis.get('hedge_ratio', {}).get('ratio'),
+                    'Hedge_Ratio_R2': analysis.get('hedge_ratio', {}).get('r_squared'),
+                    'Cointegration_Statistic': analysis.get('cointegration', {}).get('statistic'),
+                    'Cointegration_PValue': analysis.get('cointegration', {}).get('pvalue'),
+                    'Cointegrated_5pct': analysis.get('cointegration', {}).get('is_cointegrated_5pct'),
+                    'ZScore_Current': analysis.get('zscore', {}).get('current'),
+                    'ZScore_Signal': analysis.get('zscore', {}).get('signal'),
+                    'Spread_Current': analysis.get('spread', {}).get('current'),
+                    'Spread_Mean': analysis.get('spread', {}).get('mean'),
+                    'Spread_Std': analysis.get('spread', {}).get('std')
+                }
+
+                df_analytics = pd.DataFrame([export_data])
+                csv_analytics = df_analytics.to_csv(index=False)
+
+                st.download_button(
+                    label="📥 Download Analysis Results (CSV)",
+                    data=csv_analytics,
+                    file_name=f"{symbol1}_{symbol2}_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv",
+                    key="download_analytics_pair"
+                )
+
                 # Detailed results
                 with st.expander("📊 Detailed Analysis Results"):
                     st.json(analysis)
@@ -565,6 +650,145 @@ def show_multi_symbol_page(timeframe, limit, rolling_window):
                             )
 
                 st.divider()
+
+
+def show_data_management_page(timeframe):
+    """Data management page for uploads and exports"""
+    st.header("📤 Data Management")
+
+    # Create tabs for Upload and Export
+    tab1, tab2 = st.tabs(["📤 Upload OHLC Data", "📥 Export Alert History"])
+
+    with tab1:
+        st.subheader("Upload Historical OHLC CSV Data")
+
+        st.markdown("""
+        Upload historical OHLC (Open-High-Low-Close) data in CSV format.
+
+        **Required CSV Format:**
+        ```
+        timestamp,open,high,low,close,volume
+        2024-01-01 00:00:00,42000.50,42100.00,41900.00,42050.75,1234.56
+        ```
+
+        **Column Requirements:**
+        - `timestamp`: Date and time (YYYY-MM-DD HH:MM:SS or ISO format)
+        - `open`: Opening price (float)
+        - `high`: Highest price (float)
+        - `low`: Lowest price (float)
+        - `close`: Closing price (float)
+        - `volume`: Trading volume (float, optional)
+        """)
+
+        # Upload form
+        col1, col2 = st.columns(2)
+
+        with col1:
+            upload_symbol = st.selectbox(
+                "Symbol",
+                ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "ADAUSDT", "CUSTOM"],
+                key="upload_symbol"
+            )
+
+            if upload_symbol == "CUSTOM":
+                upload_symbol = st.text_input("Enter custom symbol:", "")
+
+        with col2:
+            upload_timeframe = st.selectbox(
+                "Timeframe",
+                ["1s", "1m", "5m", "15m", "1h", "4h", "1d"],
+                index=1,
+                key="upload_timeframe"
+            )
+
+        uploaded_file = st.file_uploader(
+            "Choose CSV file",
+            type=['csv'],
+            key="csv_uploader"
+        )
+
+        if uploaded_file is not None:
+            try:
+                # Preview the uploaded data
+                df = pd.read_csv(uploaded_file)
+                st.write("**Preview of uploaded data:**")
+                st.dataframe(df.head(10))
+
+                # Validate columns
+                required_cols = ['timestamp', 'open', 'high', 'low', 'close']
+                missing_cols = [col for col in required_cols if col not in df.columns]
+
+                if missing_cols:
+                    st.error(f"❌ Missing required columns: {', '.join(missing_cols)}")
+                else:
+                    st.success(f"✅ Valid format! Found {len(df)} rows")
+
+                    # Upload button
+                    if st.button("Upload to Database", key="upload_btn"):
+                        if not upload_symbol or upload_symbol == "CUSTOM":
+                            st.error("Please enter a valid symbol")
+                        else:
+                            with st.spinner("Uploading data..."):
+                                # Reset file pointer
+                                uploaded_file.seek(0)
+                                success, result = upload_ohlc_csv(
+                                    upload_symbol.upper(),
+                                    upload_timeframe,
+                                    uploaded_file
+                                )
+
+                                if success:
+                                    st.success(f"✅ Successfully uploaded {result.get('rows_inserted', 0)} rows!")
+                                    st.balloons()
+                                else:
+                                    st.error(f"❌ Upload failed: {result.get('error', 'Unknown error')}")
+
+            except Exception as e:
+                st.error(f"❌ Error reading CSV file: {e}")
+
+    with tab2:
+        st.subheader("Export Alert History")
+
+        st.markdown("""
+        Download the complete alert history including all triggered alerts,
+        Z-scores, symbols, and timestamps.
+        """)
+
+        export_limit = st.slider(
+            "Number of alerts to export",
+            min_value=10,
+            max_value=1000,
+            value=100,
+            step=10,
+            key="alert_export_limit"
+        )
+
+        if st.button("Fetch Alert History", key="fetch_alerts"):
+            with st.spinner("Fetching alert history..."):
+                alerts = get_alert_history(limit=export_limit)
+
+                if alerts and len(alerts) > 0:
+                    st.success(f"✅ Found {len(alerts)} alerts")
+
+                    # Convert to DataFrame
+                    df_alerts = pd.DataFrame(alerts)
+
+                    # Preview
+                    st.write("**Preview:**")
+                    st.dataframe(df_alerts.head(10))
+
+                    # Download button
+                    csv_alerts = df_alerts.to_csv(index=False)
+
+                    st.download_button(
+                        label="📥 Download Alert History (CSV)",
+                        data=csv_alerts,
+                        file_name=f"alert_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                        mime="text/csv",
+                        key="download_alerts"
+                    )
+                else:
+                    st.warning("No alert history found. Alerts will appear here once triggered.")
 
 
 if __name__ == "__main__":
