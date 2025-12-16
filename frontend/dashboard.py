@@ -281,12 +281,15 @@ def analyze_pair(symbol1, symbol2, timeframe="1m", rolling_window=20, limit=100)
 
 
 def create_candlestick_chart(ohlc_data, show_indicators=True):
-    """Create enhanced interactive candlestick chart with SMA and EMA"""
+    """Create enhanced interactive candlestick chart with volume subplot (following reference design)"""
     if not ohlc_data or not ohlc_data.get('bars'):
         return None
 
     df = pd.DataFrame(ohlc_data['bars'])
     df['timestamp'] = pd.to_datetime(df['timestamp'])
+
+    # Sort by timestamp to ensure chronological order
+    df = df.sort_values('timestamp')
 
     # Calculate technical indicators
     if show_indicators and len(df) >= 20:
@@ -296,78 +299,86 @@ def create_candlestick_chart(ohlc_data, show_indicators=True):
         # Exponential Moving Average (EMA) - 20 periods
         df['EMA_20'] = df['close'].ewm(span=20, adjust=False).mean()
 
-    # Create figure with candlestick
-    fig = go.Figure()
+    # Create subplots: candlestick chart (row 1, 70%) and volume chart (row 2, 30%)
+    fig = make_subplots(
+        rows=2, cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.03,
+        row_heights=[0.7, 0.3],
+        subplot_titles=(f"{ohlc_data['symbol']} - {ohlc_data['timeframe']} Price Chart", "Trading Volume")
+    )
 
-    # Add candlestick
-    fig.add_trace(go.Candlestick(
-        x=df['timestamp'],
-        open=df['open'],
-        high=df['high'],
-        low=df['low'],
-        close=df['close'],
-        name=ohlc_data['symbol'],
-        increasing=dict(line=dict(color='#26a69a', width=1.5), fillcolor='#26a69a'),
-        decreasing=dict(line=dict(color='#ef5350', width=1.5), fillcolor='#ef5350')
-    ))
+    # Add candlestick to row 1
+    fig.add_trace(
+        go.Candlestick(
+            x=df['timestamp'],
+            open=df['open'],
+            high=df['high'],
+            low=df['low'],
+            close=df['close'],
+            name=ohlc_data['symbol'],
+            increasing=dict(line=dict(color='#26a69a', width=1.5), fillcolor='#26a69a'),
+            decreasing=dict(line=dict(color='#ef5350', width=1.5), fillcolor='#ef5350'),
+            showlegend=True
+        ),
+        row=1, col=1
+    )
 
-    # Add SMA line
+    # Add SMA line to row 1
     if show_indicators and 'SMA_20' in df.columns:
-        fig.add_trace(go.Scatter(
-            x=df['timestamp'],
-            y=df['SMA_20'],
-            mode='lines',
-            name='SMA (20)',
-            line=dict(color='#2196F3', width=2),
-            hovertemplate='<b>SMA (20):</b> $%{y:.2f}<extra></extra>'
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=df['timestamp'],
+                y=df['SMA_20'],
+                mode='lines',
+                name='SMA (20)',
+                line=dict(color='#2196F3', width=2),
+                hovertemplate='<b>SMA (20):</b> $%{y:.2f}<extra></extra>',
+                showlegend=True
+            ),
+            row=1, col=1
+        )
 
-    # Add EMA line
+    # Add EMA line to row 1
     if show_indicators and 'EMA_20' in df.columns:
-        fig.add_trace(go.Scatter(
-            x=df['timestamp'],
-            y=df['EMA_20'],
-            mode='lines',
-            name='EMA (20)',
-            line=dict(color='#FF9800', width=2, dash='dash'),
-            hovertemplate='<b>EMA (20):</b> $%{y:.2f}<extra></extra>'
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=df['timestamp'],
+                y=df['EMA_20'],
+                mode='lines',
+                name='EMA (20)',
+                line=dict(color='#FF9800', width=2, dash='dash'),
+                hovertemplate='<b>EMA (20):</b> $%{y:.2f}<extra></extra>',
+                showlegend=True
+            ),
+            row=1, col=1
+        )
 
+    # Add volume bars to row 2 (colored based on price direction)
+    colors = ['#ef5350' if row['close'] < row['open'] else '#26a69a'
+              for _, row in df.iterrows()]
+
+    fig.add_trace(
+        go.Bar(
+            x=df['timestamp'],
+            y=df['volume'],
+            marker_color=colors,
+            name='Volume',
+            showlegend=False,
+            hovertemplate='<b>Volume:</b> %{y:,.2f}<extra></extra>'
+        ),
+        row=2, col=1
+    )
+
+    # Update layout
     fig.update_layout(
-        title={
-            'text': f"<b>{ohlc_data['symbol']}</b> - {ohlc_data['timeframe']} Price Chart with Technical Indicators",
-            'y':0.95,
-            'x':0.5,
-            'xanchor': 'center',
-            'yanchor': 'top',
-            'font': dict(size=20, color='#2c3e50')
-        },
-        xaxis_title="Time",
-        yaxis_title="Price (USDT)",
-        height=600,
-        xaxis_rangeslider_visible=False,
+        height=800,
         template="plotly_white",
         hovermode='x unified',
         plot_bgcolor='rgba(240, 242, 246, 0.5)',
         paper_bgcolor='white',
         font=dict(family="Arial, sans-serif", size=12),
-        xaxis=dict(
-            showgrid=True,
-            gridwidth=1,
-            gridcolor='rgba(128, 128, 128, 0.2)',
-            showline=True,
-            linewidth=2,
-            linecolor='rgba(128, 128, 128, 0.3)'
-        ),
-        yaxis=dict(
-            showgrid=True,
-            gridwidth=1,
-            gridcolor='rgba(128, 128, 128, 0.2)',
-            showline=True,
-            linewidth=2,
-            linecolor='rgba(128, 128, 128, 0.3)'
-        ),
-        margin=dict(l=60, r=60, t=80, b=60),
+        margin=dict(l=60, r=30, t=80, b=60),
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -377,7 +388,41 @@ def create_candlestick_chart(ohlc_data, show_indicators=True):
             bgcolor='rgba(255, 255, 255, 0.8)',
             bordercolor='rgba(0, 0, 0, 0.2)',
             borderwidth=1
-        )
+        ),
+        xaxis_rangeslider_visible=False
+    )
+
+    # Update x-axis and y-axis styling
+    fig.update_xaxes(
+        showgrid=True,
+        gridwidth=1,
+        gridcolor='rgba(128, 128, 128, 0.2)',
+        showline=True,
+        linewidth=2,
+        linecolor='rgba(128, 128, 128, 0.3)',
+        row=2, col=1
+    )
+
+    fig.update_yaxes(
+        title_text="Price (USDT)",
+        showgrid=True,
+        gridwidth=1,
+        gridcolor='rgba(128, 128, 128, 0.2)',
+        showline=True,
+        linewidth=2,
+        linecolor='rgba(128, 128, 128, 0.3)',
+        row=1, col=1
+    )
+
+    fig.update_yaxes(
+        title_text="Volume",
+        showgrid=True,
+        gridwidth=1,
+        gridcolor='rgba(128, 128, 128, 0.2)',
+        showline=True,
+        linewidth=2,
+        linecolor='rgba(128, 128, 128, 0.3)',
+        row=2, col=1
     )
 
     return fig
@@ -1060,11 +1105,6 @@ def show_single_symbol_page(timeframe, limit, rolling_window):
                                 value=f"{recent_volume:,.0f}",
                                 delta=f"{volume_change:+.1f}% vs avg"
                             )
-
-                    # Volume chart
-                    fig_volume = create_volume_chart(ohlc_data)
-                    if fig_volume:
-                        st.plotly_chart(fig_volume, use_container_width=True)
 
                     st.markdown("---")
 
