@@ -370,59 +370,88 @@ def create_candlestick_chart(ohlc_data, show_indicators=True):
         row=2, col=1
     )
 
-    # Update layout
+    # Update layout with improved visibility
     fig.update_layout(
         height=800,
         template="plotly_white",
         hovermode='x unified',
-        plot_bgcolor='rgba(240, 242, 246, 0.5)',
+        plot_bgcolor='white',
         paper_bgcolor='white',
-        font=dict(family="Arial, sans-serif", size=12),
-        margin=dict(l=60, r=30, t=80, b=60),
+        font=dict(
+            family="Arial, sans-serif",
+            size=14,
+            color='black'  # BLACK text for all labels
+        ),
+        title=dict(
+            text=f"<b>{ohlc_data['symbol']} Market Analysis</b>",
+            font=dict(size=20, color='black', family='Arial Black'),
+            x=0.5,
+            xanchor='center'
+        ),
+        margin=dict(l=80, r=40, t=100, b=80),
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1,
-            bgcolor='rgba(255, 255, 255, 0.8)',
-            bordercolor='rgba(0, 0, 0, 0.2)',
-            borderwidth=1
+            y=1.03,
+            xanchor="center",
+            x=0.5,
+            bgcolor='rgba(255, 255, 255, 0.9)',
+            bordercolor='black',
+            borderwidth=1,
+            font=dict(size=12, color='black')
         ),
-        xaxis_rangeslider_visible=False
+        xaxis_rangeslider_visible=False,
+        showlegend=True
     )
 
-    # Update x-axis and y-axis styling
+    # Update x-axes with BLACK text
     fig.update_xaxes(
+        title_text="Time",
+        title_font=dict(size=14, color='black', family='Arial'),
         showgrid=True,
         gridwidth=1,
-        gridcolor='rgba(128, 128, 128, 0.2)',
+        gridcolor='rgba(200, 200, 200, 0.4)',
         showline=True,
         linewidth=2,
-        linecolor='rgba(128, 128, 128, 0.3)',
+        linecolor='black',
+        tickfont=dict(size=12, color='black'),
+        tickangle=45,
         row=2, col=1
     )
 
+    # Update price y-axis with BLACK text
     fig.update_yaxes(
-        title_text="Price (USDT)",
+        title_text="Price",
+        title_font=dict(size=14, color='black', family='Arial'),
         showgrid=True,
         gridwidth=1,
-        gridcolor='rgba(128, 128, 128, 0.2)',
+        gridcolor='rgba(200, 200, 200, 0.4)',
         showline=True,
         linewidth=2,
-        linecolor='rgba(128, 128, 128, 0.3)',
+        linecolor='black',
+        tickfont=dict(size=12, color='black'),
+        tickformat=',.2f',
         row=1, col=1
     )
 
+    # Update volume y-axis with BLACK text
     fig.update_yaxes(
         title_text="Volume",
+        title_font=dict(size=14, color='black', family='Arial'),
         showgrid=True,
         gridwidth=1,
-        gridcolor='rgba(128, 128, 128, 0.2)',
+        gridcolor='rgba(200, 200, 200, 0.4)',
         showline=True,
         linewidth=2,
-        linecolor='rgba(128, 128, 128, 0.3)',
+        linecolor='black',
+        tickfont=dict(size=12, color='black'),
+        tickformat='.2s',
         row=2, col=1
+    )
+
+    # Update subplot title styling (make them black and bold)
+    fig.update_annotations(
+        font=dict(size=14, color='black', family='Arial'),
     )
 
     return fig
