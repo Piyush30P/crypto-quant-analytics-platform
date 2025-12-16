@@ -955,12 +955,12 @@ def main():
 
 
 def show_single_symbol_page(timeframe, limit, rolling_window):
-    """Enhanced single symbol analysis page"""
+    """Enhanced single symbol analysis page with cleaner UI (following reference design)"""
     st.markdown("# 📈 Single Symbol Analysis")
     st.markdown("*Comprehensive price action and technical analysis for individual cryptocurrency pairs*")
     st.markdown("---")
 
-    # Enhanced Symbol Selection Row
+    # Symbol Selection Row
     col1, col2, col3 = st.columns([2, 1, 1])
 
     with col1:
@@ -982,140 +982,170 @@ def show_single_symbol_page(timeframe, limit, rolling_window):
 
     if analyze_btn:
         with st.spinner(f"📊 Fetching {symbol} data..."):
-            # Get statistics
+            # Get statistics and OHLC data
             stats = get_statistics(symbol, timeframe, limit, rolling_window)
+            ohlc_data = get_ohlc_data(symbol, timeframe, limit)
 
-            if stats:
-                # Display metrics
-                display_statistics_cards(stats)
+            if stats and ohlc_data:
+                df_ohlc = pd.DataFrame(ohlc_data['bars'])
+                df_ohlc['timestamp'] = pd.to_datetime(df_ohlc['timestamp'])
+
+                price_stats = stats.get('price_stats', {})
+                volume_stats = stats.get('volume_stats', {})
+                volatility = stats.get('volatility', {})
+                returns = stats.get('returns', {})
+
+                # Row 1: Price & Volume Metrics
+                st.markdown("### 💰 Price & Volume Metrics")
+                col1, col2, col3 = st.columns(3)
+
+                with col1:
+                    latest_price = price_stats.get('latest', 0)
+                    change_pct = price_stats.get('change_pct', 0)
+                    st.metric(
+                        "💲 Current Price",
+                        f"${latest_price:,.2f}",
+                        f"{change_pct:.2f}%",
+                        help="The current price of the selected trading pair"
+                    )
+
+                with col2:
+                    latest_vol = volume_stats.get('latest', 0) if volume_stats else 0
+                    mean_vol = volume_stats.get('mean', 0) if volume_stats else 0
+                    vol_change = ((latest_vol / mean_vol - 1) * 100) if mean_vol > 0 else 0
+                    st.metric(
+                        "📊 Volume",
+                        f"{latest_vol:,.0f}",
+                        f"{vol_change:+.1f}% vs avg",
+                        help="Trading volume compared to average"
+                    )
+
+                with col3:
+                    high_price = price_stats.get('high', 0)
+                    low_price = price_stats.get('low', 0)
+                    daily_range = high_price - low_price
+                    st.metric(
+                        "📈 Daily Range",
+                        f"${daily_range:,.2f}",
+                        f"H: ${high_price:,.2f} L: ${low_price:,.2f}",
+                        delta_color="off",
+                        help="Price difference between high and low"
+                    )
+
+                # Spacing
+                st.markdown("<br>", unsafe_allow_html=True)
+
+                # Row 2: Technical & Historical Metrics
+                st.markdown("### 📉 Technical & Historical Metrics")
+
+                # Calculate indicators if we have enough data
+                if len(df_ohlc) >= 20:
+                    col1, col2, col3, col4 = st.columns(4)
+
+                    with col1:
+                        sma_20 = df_ohlc['close'].rolling(window=20).mean().iloc[-1]
+                        current_price = df_ohlc['close'].iloc[-1]
+                        sma_diff_pct = ((current_price - sma_20) / sma_20) * 100
+                        st.metric(
+                            "📏 SMA (20 Days)",
+                            f"${sma_20:,.2f}",
+                            f"{sma_diff_pct:+.2f}%",
+                            help="Simple Moving Average over 20 periods"
+                        )
+
+                    with col2:
+                        ema_20 = df_ohlc['close'].ewm(span=20, adjust=False).mean().iloc[-1]
+                        ema_diff_pct = ((current_price - ema_20) / ema_20) * 100
+                        st.metric(
+                            "📏 EMA (20 Days)",
+                            f"${ema_20:,.2f}",
+                            f"{ema_diff_pct:+.2f}%",
+                            help="Exponential Moving Average over 20 periods"
+                        )
+
+                    with col3:
+                        # Calculate RSI
+                        delta = df_ohlc['close'].diff()
+                        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+                        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+                        rs = gain / loss
+                        rsi = 100 - (100 / (1 + rs))
+                        rsi_val = rsi.iloc[-1] if not rsi.empty and not pd.isna(rsi.iloc[-1]) else 50
+                        rsi_signal = "Overbought" if rsi_val > 70 else "Oversold" if rsi_val < 30 else "Normal"
+                        st.metric(
+                            "⚡ RSI (14)",
+                            f"{rsi_val:.1f}",
+                            rsi_signal,
+                            delta_color="off",
+                            help="Relative Strength Index"
+                        )
+
+                    with col4:
+                        vol = volatility.get('current')
+                        ann_vol = volatility.get('annualized', 0)
+                        if vol and vol is not None:
+                            st.metric(
+                                "📊 Volatility",
+                                f"{vol*100:.3f}%",
+                                f"Ann: {ann_vol*100:.2f}%",
+                                delta_color="off",
+                                help="Current and annualized volatility"
+                            )
+                        else:
+                            st.metric("📊 Volatility", "N/A")
+                else:
+                    st.warning("⚠️ Insufficient data for technical indicators (need 20+ data points)")
 
                 st.markdown("---")
 
-                # Get OHLC data for charts
-                ohlc_data = get_ohlc_data(symbol, timeframe, limit)
+                # Tabs for different chart views
+                tab1, tab2, tab3 = st.tabs(["📈 Candlestick Chart", "🎯 Market Sentiment", "📥 Data Export"])
 
-                if ohlc_data:
-                    # Market Sentiment & Prediction Section
-                    df_ohlc = pd.DataFrame(ohlc_data['bars'])
-                    df_ohlc['timestamp'] = pd.to_datetime(df_ohlc['timestamp'])
-
-                    st.markdown("---")
-                    st.markdown("## 🎯 Market Sentiment & Forecast")
-
-                    col1, col2 = st.columns(2)
-
-                    with col1:
-                        # Market Sentiment
-                        sentiment, sentiment_color = calculate_market_sentiment(df_ohlc)
-                        st.markdown(f"""
-                        <div style="background: linear-gradient(135deg, {sentiment_color}20 0%, {sentiment_color}10 100%);
-                                    padding: 1.5rem; border-radius: 12px; border-left: 4px solid {sentiment_color};
-                                    text-align: center;">
-                            <h3 style="margin: 0; color: #2c3e50;">📊 Market Sentiment</h3>
-                            <h2 style="margin: 0.5rem 0; color: {sentiment_color}; font-size: 2rem;">{sentiment}</h2>
-                            <p style="margin: 0; color: #666; font-size: 0.9rem;">Based on SMA, EMA, Price & Volume</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-
-                    with col2:
-                        # Price Forecast
-                        forecast = simple_price_forecast(df_ohlc, periods=5)
-                        if forecast:
-                            current_price = df_ohlc['close'].iloc[-1]
-                            predicted_price = forecast[-1]
-                            price_diff = ((predicted_price - current_price) / current_price) * 100
-                            forecast_color = "#28a745" if price_diff > 0 else "#dc3545"
-
-                            st.markdown(f"""
-                            <div style="background: linear-gradient(135deg, {forecast_color}20 0%, {forecast_color}10 100%);
-                                        padding: 1.5rem; border-radius: 12px; border-left: 4px solid {forecast_color};
-                                        text-align: center;">
-                                <h3 style="margin: 0; color: #2c3e50;">🔮 5-Period Forecast</h3>
-                                <h2 style="margin: 0.5rem 0; color: {forecast_color}; font-size: 2rem;">
-                                    ${predicted_price:,.2f} ({price_diff:+.2f}%)
-                                </h2>
-                                <p style="margin: 0; color: #666; font-size: 0.9rem;">Based on EMA trend analysis</p>
-                            </div>
-                            """, unsafe_allow_html=True)
-                        else:
-                            st.info("Insufficient data for forecast (need 20+ data points)")
-
-                    st.markdown("---")
-
-                    # Charts Section
-                    st.markdown("## 📊 Price & Volume Analysis")
-
-                    # Candlestick chart with indicators
+                with tab1:
+                    # Candlestick chart with volume
                     fig_candle = create_candlestick_chart(ohlc_data, show_indicators=True)
                     if fig_candle:
                         st.plotly_chart(fig_candle, use_container_width=True)
 
-                    # Technical Indicators Summary
+                with tab2:
+                    # Market Sentiment and Forecast
+                    st.markdown("### 🎯 Market Sentiment & Forecast")
+
                     if len(df_ohlc) >= 20:
-                        st.markdown("### 📈 Technical Indicators Summary")
-                        col1, col2, col3, col4 = st.columns(4)
+                        col1, col2 = st.columns(2)
 
                         with col1:
-                            sma_20 = df_ohlc['close'].rolling(window=20).mean().iloc[-1]
-                            current_price = df_ohlc['close'].iloc[-1]
-                            sma_signal = "Above" if current_price > sma_20 else "Below"
-                            sma_color = "normal" if current_price > sma_20 else "inverse"
+                            sentiment, sentiment_color = calculate_market_sentiment(df_ohlc)
                             st.metric(
-                                label="📊 SMA (20)",
-                                value=f"${sma_20:,.2f}",
-                                delta=f"Price {sma_signal}",
-                                delta_color=sma_color
-                            )
-
-                        with col2:
-                            ema_20 = df_ohlc['close'].ewm(span=20, adjust=False).mean().iloc[-1]
-                            ema_signal = "Above" if current_price > ema_20 else "Below"
-                            ema_color = "normal" if current_price > ema_20 else "inverse"
-                            st.metric(
-                                label="📉 EMA (20)",
-                                value=f"${ema_20:,.2f}",
-                                delta=f"Price {ema_signal}",
-                                delta_color=ema_color
-                            )
-
-                        with col3:
-                            # Calculate RSI (simplified)
-                            delta = df_ohlc['close'].diff()
-                            gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-                            loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-                            rs = gain / loss
-                            rsi = 100 - (100 / (1 + rs))
-                            rsi_val = rsi.iloc[-1] if not rsi.empty and not pd.isna(rsi.iloc[-1]) else 50
-
-                            rsi_signal = "Overbought" if rsi_val > 70 else "Oversold" if rsi_val < 30 else "Normal"
-                            st.metric(
-                                label="⚡ RSI (14)",
-                                value=f"{rsi_val:.1f}",
-                                delta=rsi_signal,
+                                "📊 Market Sentiment",
+                                sentiment,
+                                "Based on SMA, EMA, Price & Volume",
                                 delta_color="off"
                             )
 
-                        with col4:
-                            # Volume trend
-                            recent_volume = df_ohlc['volume'].tail(5).mean()
-                            avg_volume = df_ohlc['volume'].mean()
-                            volume_change = ((recent_volume / avg_volume - 1) * 100) if avg_volume > 0 else 0
-                            st.metric(
-                                label="📦 Volume Trend",
-                                value=f"{recent_volume:,.0f}",
-                                delta=f"{volume_change:+.1f}% vs avg"
-                            )
+                        with col2:
+                            forecast = simple_price_forecast(df_ohlc, periods=5)
+                            if forecast:
+                                current_price = df_ohlc['close'].iloc[-1]
+                                predicted_price = forecast[-1]
+                                price_diff = ((predicted_price - current_price) / current_price) * 100
+                                st.metric(
+                                    "🔮 5-Period Forecast",
+                                    f"${predicted_price:,.2f}",
+                                    f"{price_diff:+.2f}%",
+                                    help="Based on EMA trend analysis"
+                                )
+                    else:
+                        st.info("Insufficient data for sentiment and forecast (need 20+ data points)")
 
-                    st.markdown("---")
-
-                    # Data Export Section
-                    st.markdown("## 📥 Data Export")
+                with tab3:
+                    # Data Export
+                    st.markdown("### 📥 Data Export")
                     st.markdown("Download the analyzed data for further processing or record-keeping")
 
                     col1, col2, col3 = st.columns([2, 2, 2])
 
                     with col1:
-                        df_ohlc = pd.DataFrame(ohlc_data['bars'])
                         csv_data = df_ohlc.to_csv(index=False)
                         st.download_button(
                             label="📥 Download OHLC Data (CSV)",
@@ -1127,16 +1157,15 @@ def show_single_symbol_page(timeframe, limit, rolling_window):
                         )
 
                     with col2:
-                        st.info(f"**{len(df_ohlc)}** data points ready for download")
+                        st.info(f"**{len(df_ohlc)}** data points ready")
 
                     with col3:
                         st.success(f"**Last Updated:** {datetime.now().strftime('%H:%M:%S')}")
 
-                st.markdown("---")
-
                 # Detailed statistics expander
                 with st.expander("🔬 View Detailed Statistics JSON"):
                     st.json(stats)
+
             else:
                 st.error("❌ No data available for this symbol.")
                 st.info("💡 **Tip:** Make sure the backend ingestion service is running to collect data.")
