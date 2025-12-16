@@ -113,7 +113,7 @@ def main():
         {'symbol': 'ETHUSDT', 'timeframe': '1h', 'num_bars': 168, 'base_price': 2900},
     ]
 
-    db = next(get_db_sync())
+    db = get_db_sync()
 
     try:
         for config in configs:
