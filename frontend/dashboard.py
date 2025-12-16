@@ -871,11 +871,25 @@ def main():
     timeframe = st.sidebar.selectbox(
         "Timeframe",
         ["1s", "1m", "5m", "15m", "1h", "4h", "1d"],
-        index=1
+        index=1,
+        help="Select timeframe for OHLC data"
     )
 
-    limit = st.sidebar.slider("Data Points", 10, 500, 100)
-    rolling_window = st.sidebar.slider("Rolling Window", 5, 100, 20)
+    limit = st.sidebar.slider(
+        "Data Points",
+        min_value=50,
+        max_value=1000,
+        value=500,
+        step=50,
+        help="More data points = denser chart"
+    )
+    rolling_window = st.sidebar.slider(
+        "Rolling Window",
+        min_value=5,
+        max_value=100,
+        value=20,
+        help="Window size for moving averages"
+    )
 
     auto_refresh = st.sidebar.checkbox("Auto Refresh (10s)")
 
